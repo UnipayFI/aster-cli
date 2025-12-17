@@ -1,0 +1,276 @@
+package futures
+
+import (
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/UnipayFI/aster-cli/config"
+	"github.com/UnipayFI/aster-cli/exchange"
+	"github.com/UnipayFI/aster-cli/exchange/futures"
+	"github.com/UnipayFI/aster-cli/printer"
+	"github.com/spf13/cobra"
+)
+
+var (
+	positionCmd = &cobra.Command{
+		Use:   "position",
+		Short: "Position management commands",
+		Long:  `Manage positions: list, risk, mode, margin, ADL quantile, etc.`,
+	}
+
+	// position list
+	positionListCmd = &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List positions",
+		Long:    `Get current account's all positions.`,
+		Run:     listPositions,
+	}
+
+	// position risk
+	positionRiskCmd = &cobra.Command{
+		Use:     "risk",
+		Aliases: []string{"r"},
+		Short:   "Show position risk",
+		Long:    `Get current position information (only symbols with positions will be returned).`,
+		Run:     showPositionRisk,
+	}
+
+	// position mode
+	positionModeCmd = &cobra.Command{
+		Use:   "mode",
+		Short: "Manage position mode (Hedge/One-way)",
+		Long:  `Get or change the position mode. Hedge mode allows both LONG and SHORT positions; One-way mode allows only one position direction.`,
+	}
+
+	positionModeGetCmd = &cobra.Command{
+		Use:   "get",
+		Short: "Get current position mode",
+		Run:   getPositionMode,
+	}
+
+	positionModeHedge  bool
+	positionModeOneway bool
+	positionModeSetCmd = &cobra.Command{
+		Use:   "set",
+		Short: "Set position mode",
+		Long:  `Change the position mode. Use --hedge for Hedge mode or --oneway for One-way mode.`,
+		Run:   setPositionModeFunc,
+	}
+
+	// position margin-history
+	positionMarginHistorySymbol    string
+	positionMarginHistoryType      int
+	positionMarginHistoryStartTime int64
+	positionMarginHistoryEndTime   int64
+	positionMarginHistoryLimit     int
+	positionMarginHistoryCmd       = &cobra.Command{
+		Use:   "margin-history",
+		Short: "Query position margin change history",
+		Long:  `Get the position margin change history for a symbol.`,
+		Run:   showPositionMarginHistory,
+	}
+
+	// position adl-quantile
+	positionAdlQuantileSymbol string
+	positionAdlQuantileCmd    = &cobra.Command{
+		Use:   "adl-quantile",
+		Short: "Query ADL quantile estimation",
+		Long:  `Get ADL (Auto-Deleveraging) quantile estimation for positions.`,
+		Run:   showAdlQuantile,
+	}
+
+	// position set-margin
+	positionMarginCmd = &cobra.Command{
+		Use:   "set-margin",
+		Short: "Modify isolated position margin",
+		Long:  `Add or reduce isolated position margin.`,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			typ, _ := cmd.Flags().GetString("type")
+			if typ != "ADD" && typ != "REDUCE" {
+				log.Fatalf("type must be ADD or REDUCE")
+			}
+		},
+		Run: setPositionMargin,
+	}
+
+	// position side (get current mode - legacy)
+	positionSideStatusCmd = &cobra.Command{
+		Use:     "side",
+		Aliases: []string{"s"},
+		Short:   "Get position mode status",
+		Long:    `Get user's position mode (Hedge Mode or One-way Mode).`,
+		Run:     positionSideStatus,
+	}
+
+	// position set-side (legacy, kept for compatibility)
+	positionSideStatusChangeCmd = &cobra.Command{
+		Use:     "set-side",
+		Aliases: []string{"c"},
+		Short:   "Change position mode (deprecated, use 'mode set')",
+		Long:    `Change position mode. Deprecated: use 'position mode set' instead.`,
+		Run:     positionSideStatusChange,
+	}
+)
+
+func InitPositionsCmds() []*cobra.Command {
+	// position risk flags
+	positionRiskCmd.Flags().StringP("symbol", "s", "", "Trading pair symbol")
+
+	// position mode flags
+	positionModeSetCmd.Flags().BoolVar(&positionModeHedge, "hedge", false, "Enable Hedge mode (dual side position)")
+	positionModeSetCmd.Flags().BoolVar(&positionModeOneway, "oneway", false, "Enable One-way mode (single side position)")
+	positionModeSetCmd.MarkFlagsMutuallyExclusive("hedge", "oneway")
+	positionModeCmd.AddCommand(positionModeGetCmd, positionModeSetCmd)
+
+	// position margin-history flags
+	positionMarginHistoryCmd.Flags().StringVarP(&positionMarginHistorySymbol, "symbol", "s", "", "Trading pair symbol (required)")
+	positionMarginHistoryCmd.Flags().IntVarP(&positionMarginHistoryType, "type", "t", 0, "Margin type: 1 for Add, 2 for Reduce")
+	positionMarginHistoryCmd.Flags().Int64VarP(&positionMarginHistoryStartTime, "startTime", "a", 0, "Start time (timestamp in ms)")
+	positionMarginHistoryCmd.Flags().Int64VarP(&positionMarginHistoryEndTime, "endTime", "e", 0, "End time (timestamp in ms)")
+	positionMarginHistoryCmd.Flags().IntVarP(&positionMarginHistoryLimit, "limit", "l", 500, "Number of results (default 500)")
+	positionMarginHistoryCmd.MarkFlagRequired("symbol")
+
+	// position adl-quantile flags
+	positionAdlQuantileCmd.Flags().StringVarP(&positionAdlQuantileSymbol, "symbol", "s", "", "Trading pair symbol (optional)")
+
+	// position set-margin flags
+	positionMarginCmd.Flags().StringP("symbol", "s", "", "Trading pair symbol (required)")
+	positionMarginCmd.Flags().StringP("positionSide", "p", "BOTH", "Position side: BOTH, LONG, or SHORT")
+	positionMarginCmd.Flags().Float64P("amount", "a", 0, "Margin amount")
+	positionMarginCmd.Flags().StringP("type", "t", "ADD", "Margin type: ADD or REDUCE")
+	positionMarginCmd.MarkFlagRequired("symbol")
+	positionMarginCmd.MarkFlagRequired("amount")
+
+	// position set-side flags (deprecated)
+	positionSideStatusChangeCmd.Flags().BoolP("dual", "d", true, "Enable dual side position")
+	positionSideStatusChangeCmd.MarkFlagRequired("dual")
+
+	// Add all subcommands to position
+	positionCmd.AddCommand(
+		positionListCmd,
+		positionRiskCmd,
+		positionModeCmd,
+		positionMarginHistoryCmd,
+		positionAdlQuantileCmd,
+		positionMarginCmd,
+		positionSideStatusCmd,
+		positionSideStatusChangeCmd,
+	)
+
+	return []*cobra.Command{positionCmd}
+}
+
+func listPositions(cmd *cobra.Command, _ []string) {
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	positions, err := client.GetPositions()
+	if err != nil {
+		log.Fatalf("futures position list error: %v", err)
+	}
+	printer.PrintTable(&positions)
+}
+
+func showPositionRisk(cmd *cobra.Command, _ []string) {
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	symbol, _ := cmd.Flags().GetString("symbol")
+	positions, err := client.GetPositionRisk(symbol)
+	if err != nil {
+		log.Fatalf("futures position risk error: %v", err)
+	}
+	printer.PrintTable(&positions)
+}
+
+func getPositionMode(cmd *cobra.Command, args []string) {
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	dualSide, err := client.GetPositionMode()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if dualSide {
+		fmt.Println("Position Mode: Hedge Mode (Dual Side Position)")
+	} else {
+		fmt.Println("Position Mode: One-way Mode (Single Side Position)")
+	}
+}
+
+func setPositionModeFunc(cmd *cobra.Command, args []string) {
+	if !positionModeHedge && !positionModeOneway {
+		log.Fatal("Please specify --hedge or --oneway")
+	}
+
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	err := client.ChangePositionMode(positionModeHedge)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if positionModeHedge {
+		fmt.Println("Position mode changed to: Hedge Mode (Dual Side Position)")
+	} else {
+		fmt.Println("Position mode changed to: One-way Mode (Single Side Position)")
+	}
+}
+
+func showPositionMarginHistory(cmd *cobra.Command, args []string) {
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	var startTime, endTime time.Time
+	if positionMarginHistoryStartTime != 0 {
+		startTime = time.UnixMilli(positionMarginHistoryStartTime)
+	}
+	if positionMarginHistoryEndTime != 0 {
+		endTime = time.UnixMilli(positionMarginHistoryEndTime)
+	}
+	history, err := client.GetPositionMarginHistory(positionMarginHistorySymbol, positionMarginHistoryType, startTime, endTime, positionMarginHistoryLimit)
+	if err != nil {
+		log.Fatal(err)
+	}
+	printer.PrintTable(history)
+}
+
+func showAdlQuantile(cmd *cobra.Command, args []string) {
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	quantiles, err := client.GetAdlQuantile(positionAdlQuantileSymbol)
+	if err != nil {
+		log.Fatal(err)
+	}
+	printer.PrintTable(quantiles)
+}
+
+func setPositionMargin(cmd *cobra.Command, _ []string) {
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	symbol, _ := cmd.Flags().GetString("symbol")
+	positionSide, _ := cmd.Flags().GetString("positionSide")
+	amount, _ := cmd.Flags().GetFloat64("amount")
+	typ, _ := cmd.Flags().GetString("type")
+	var t int
+	if typ == "ADD" {
+		t = 1
+	} else {
+		t = 2
+	}
+	err := client.ModifyPositionMargin(symbol, positionSide, amount, t)
+	if err != nil {
+		log.Fatalf("futures position margin set error: %v", err)
+	}
+	fmt.Printf("%s %s position %s %.6f\n", symbol, positionSide, typ, amount)
+}
+
+func positionSideStatus(cmd *cobra.Command, _ []string) {
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	position, err := client.GetPositionSide()
+	if err != nil {
+		log.Fatalf("futures position side status error: %v", err)
+	}
+	fmt.Printf("dual side position: %v\n", position)
+}
+
+func positionSideStatusChange(cmd *cobra.Command, _ []string) {
+	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	dualSidePosition, _ := cmd.Flags().GetBool("dual")
+	err := client.ChangePositionSide(dualSidePosition)
+	if err != nil {
+		log.Fatalf("futures position side status change error: %v", err)
+	}
+	fmt.Printf("dual side position changed to: %v\n", dualSidePosition)
+}
