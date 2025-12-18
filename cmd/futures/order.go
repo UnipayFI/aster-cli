@@ -101,7 +101,7 @@ func InitOrderCmds() []*cobra.Command {
 	orderListCmd.MarkFlagRequired("symbol")
 
 	// order force flags
-	orderForceCloseCmd.Flags().StringP("type", "t", "", "Auto close type: LIQUIDATION or ADL")
+	orderForceCloseCmd.Flags().StringP("autoCloseType", "t", "", "Auto close type: LIQUIDATION or ADL")
 	orderForceCloseCmd.Flags().Int64P("startTime", "a", 0, "Start time (timestamp in ms)")
 	orderForceCloseCmd.Flags().Int64P("endTime", "e", 0, "End time (timestamp in ms)")
 	orderForceCloseCmd.Flags().IntP("limit", "l", 50, "Number of results (default 50, max 100)")
@@ -184,7 +184,7 @@ func orderOpenList(cmd *cobra.Command, _ []string) {
 func forceCloseOrder(cmd *cobra.Command, _ []string) {
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	symbol, _ := cmd.Flags().GetString("symbol")
-	autoCloseType, _ := cmd.Flags().GetString("type")
+	autoCloseType, _ := cmd.Flags().GetString("autoCloseType")
 	startTime, _ := cmd.Flags().GetInt64("startTime")
 	endTime, _ := cmd.Flags().GetInt64("endTime")
 	limit, _ := cmd.Flags().GetInt("limit")

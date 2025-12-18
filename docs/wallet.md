@@ -8,7 +8,7 @@
 Transfer assets between spot and futures wallets.
 
 ```shell
-./aster-cli wallet transfer --type=SPOT_FUTURE --asset=USDT --amount=100
+./aster-cli wallet transfer --kindType=SPOT_FUTURE --asset=USDT --amount=100
 ```
 
 **Supported transfer types:**
@@ -16,7 +16,7 @@ Transfer assets between spot and futures wallets.
 - `FUTURE_SPOT`: Transfer from futures wallet to spot wallet
 
 **Parameters:**
-- `--type, -t`: Transfer type: SPOT_FUTURE or FUTURE_SPOT (required)
+- `--kindType, -t`: Transfer type: SPOT_FUTURE or FUTURE_SPOT (required)
 - `--asset, -a`: Asset to transfer, e.g., USDT, BTC (required)
 - `--amount, -m`: Amount to transfer (required, must be greater than 0)
 
@@ -24,12 +24,12 @@ Transfer assets between spot and futures wallets.
 
 Transfer 100 USDT from spot to futures:
 ```shell
-./aster-cli wallet transfer --type=SPOT_FUTURE --asset=USDT --amount=100
+./aster-cli wallet transfer --kindType=SPOT_FUTURE --asset=USDT --amount=100
 ```
 
 Transfer 50 USDC from futures to spot:
 ```shell
-./aster-cli wallet transfer --type=FUTURE_SPOT --asset=USDC --amount=50
+./aster-cli wallet transfer --kindType=FUTURE_SPOT --asset=USDC --amount=50
 ```
 
 **Output:**

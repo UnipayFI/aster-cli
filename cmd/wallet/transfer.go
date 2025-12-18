@@ -16,17 +16,17 @@ var (
 		Use:   "transfer",
 		Short: "Transfer assets between spot and futures",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			transferType, _ := cmd.Flags().GetString("type")
+			kindType, _ := cmd.Flags().GetString("kindType")
 			asset, _ := cmd.Flags().GetString("asset")
 			amount, _ := cmd.Flags().GetFloat64("amount")
-			if transferType == "" || asset == "" {
-				log.Fatal("type, asset are required")
+			if kindType == "" || asset == "" {
+				log.Fatal("kindType, asset are required")
 			}
 			if amount <= 0 {
 				log.Fatal("amount must be greater than 0")
 			}
-			if transferType != "SPOT_FUTURE" && transferType != "FUTURE_SPOT" {
-				log.Fatal("type must be SPOT_FUTURE or FUTURE_SPOT")
+			if kindType != "SPOT_FUTURE" && kindType != "FUTURE_SPOT" {
+				log.Fatal("kindType must be SPOT_FUTURE or FUTURE_SPOT")
 			}
 		},
 		Long: `Transfer assets between spot and futures wallet.
@@ -39,19 +39,19 @@ Supported transfer types:
 )
 
 func InitTransferCmds() []*cobra.Command {
-	transferCmd.Flags().StringP("type", "t", "", "transfer type: SPOT_FUTURE or FUTURE_SPOT")
+	transferCmd.Flags().StringP("kindType", "t", "", "kindType: SPOT_FUTURE or FUTURE_SPOT")
 	transferCmd.Flags().StringP("asset", "a", "", "asset to transfer (e.g., USDT)")
 	transferCmd.Flags().Float64P("amount", "m", 0, "amount to transfer")
 	return []*cobra.Command{transferCmd}
 }
 
 func doTransfer(cmd *cobra.Command, args []string) {
-	transferType, _ := cmd.Flags().GetString("type")
+	kindType, _ := cmd.Flags().GetString("kindType")
 	asset, _ := cmd.Flags().GetString("asset")
 	amount, _ := cmd.Flags().GetFloat64("amount")
 
 	client := wallet.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
-	result, err := client.Transfer(transferType, asset, amount)
+	result, err := client.Transfer(kindType, asset, amount)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -98,7 +98,7 @@ Exec: `./aster-cli futures account income`
 
 **Supported parameters:**
 - `--symbol, -s`: Trading pair symbol
-- `--type, -t`: Income type (e.g., REALIZED_PNL, COMMISSION, FUNDING_FEE)
+- `--incomeType, -t`: Income type (e.g., REALIZED_PNL, COMMISSION, FUNDING_FEE)
 - `--startTime, -a`: Start time (timestamp in ms)
 - `--endTime, -e`: End time (timestamp in ms)
 - `--limit, -l`: Number of results (default 100, max 1000)
@@ -123,8 +123,8 @@ Exec: `./aster-cli futures account income`
 
 **Enable/Disable multi-assets mode:**
 ```shell
-./aster-cli futures account multi-assets-mode set --enable
-./aster-cli futures account multi-assets-mode set --disable
+./aster-cli futures account multi-assets-mode set --multiAssetsMargin=true
+./aster-cli futures account multi-assets-mode set --multiAssetsMargin=false
 ```
 
 ## Order
@@ -239,7 +239,7 @@ Query user's force orders (liquidation orders).
 
 **Supported parameters:**
 - `--symbol, -s`: Trading pair symbol
-- `--type, -t`: Auto close type: LIQUIDATION or ADL
+- `--autoCloseType, -t`: Auto close type: LIQUIDATION or ADL
 - `--startTime, -a`: Start time (timestamp in ms)
 - `--endTime, -e`: End time (timestamp in ms)
 - `--limit, -l`: Number of results (default 50, max 100)
@@ -292,14 +292,14 @@ Or for a specific symbol:
 
 **Set position mode (Hedge/One-way):**
 ```shell
-./aster-cli futures position mode set --hedge    # Enable Hedge mode (dual side position)
-./aster-cli futures position mode set --oneway   # Enable One-way mode (single side position)
+./aster-cli futures position mode set --dualSidePosition=true   # Hedge mode (dual side position)
+./aster-cli futures position mode set --dualSidePosition=false  # One-way mode (single side position)
 ```
 
 **Legacy commands (still supported):**
 ```shell
 ./aster-cli futures position side               # Get position mode status
-./aster-cli futures position set-side --dual=true  # Change position mode
+./aster-cli futures position set-side --dualSidePosition=true  # Change position mode
 ```
 
 ### Position - Set position margin
@@ -349,7 +349,7 @@ Change initial leverage for a symbol.
 ### Symbol - Set margin type
 Change symbol level margin type.
 ```shell
-./aster-cli futures symbol set-margin-type --symbol=BTCUSDT --margin-type=CROSSED
+./aster-cli futures symbol set-margin-type --symbol=BTCUSDT --marginType=CROSSED
 ```
 Supported types: ISOLATED, CROSSED
 

@@ -66,12 +66,11 @@ var (
 		Run:   showAccountMultiAssetsMode,
 	}
 
-	multiAssetsModeEnable        bool
-	multiAssetsModeDisable       bool
+	multiAssetsMargin            bool
 	accountMultiAssetsModeSetCmd = &cobra.Command{
 		Use:   "set",
 		Short: "Set multi-assets mode",
-		Long:  `Change multi-assets mode. Use --enable to enable or --disable to disable.`,
+		Long:  `Change multi-assets mode. Use --multiAssetsMargin=true for Multi-Assets Mode or --multiAssetsMargin=false for Single-Asset Mode.`,
 		Run:   setAccountMultiAssetsMode,
 	}
 )
@@ -81,14 +80,13 @@ func InitAccountCmds() []*cobra.Command {
 	accountCommissionRateCmd.MarkFlagRequired("symbol")
 
 	accountIncomeCmd.Flags().StringP("symbol", "s", "", "Trading pair symbol")
-	accountIncomeCmd.Flags().StringP("type", "t", "", "Income type")
+	accountIncomeCmd.Flags().StringP("incomeType", "t", "", "Income type")
 	accountIncomeCmd.Flags().Int64P("startTime", "a", 0, "Start time (timestamp in ms)")
 	accountIncomeCmd.Flags().Int64P("endTime", "e", 0, "End time (timestamp in ms)")
 	accountIncomeCmd.Flags().IntP("limit", "l", 100, "Number of results (default 100, max 1000)")
 
-	accountMultiAssetsModeSetCmd.Flags().BoolVar(&multiAssetsModeEnable, "enable", false, "Enable multi-assets mode")
-	accountMultiAssetsModeSetCmd.Flags().BoolVar(&multiAssetsModeDisable, "disable", false, "Disable multi-assets mode")
-	accountMultiAssetsModeSetCmd.MarkFlagsMutuallyExclusive("enable", "disable")
+	accountMultiAssetsModeSetCmd.Flags().BoolVar(&multiAssetsMargin, "multiAssetsMargin", false, "true: Multi-Assets Mode; false: Single-Asset Mode")
+	accountMultiAssetsModeSetCmd.MarkFlagRequired("multiAssetsMargin")
 	accountMultiAssetsModeCmd.AddCommand(accountMultiAssetsModeShowCmd, accountMultiAssetsModeSetCmd)
 
 	accountCmd.AddCommand(
@@ -131,7 +129,7 @@ func showAccountCommissionRate(cmd *cobra.Command, _ []string) {
 
 func showAccountIncome(cmd *cobra.Command, _ []string) {
 	symbol, _ := cmd.Flags().GetString("symbol")
-	incomeType, _ := cmd.Flags().GetString("type")
+	incomeType, _ := cmd.Flags().GetString("incomeType")
 	startTime, _ := cmd.Flags().GetInt64("startTime")
 	endTime, _ := cmd.Flags().GetInt64("endTime")
 	limit, _ := cmd.Flags().GetInt("limit")
@@ -154,17 +152,17 @@ func showAccountMultiAssetsMode(cmd *cobra.Command, _ []string) {
 }
 
 func setAccountMultiAssetsMode(cmd *cobra.Command, _ []string) {
-	if !multiAssetsModeEnable && !multiAssetsModeDisable {
-		log.Fatal("Please specify --enable or --disable")
+	if !cmd.Flags().Changed("multiAssetsMargin") {
+		log.Fatal("Please specify --multiAssetsMargin")
 	}
 
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
-	err := client.SetMultiAssetsMode(multiAssetsModeEnable)
+	err := client.SetMultiAssetsMode(multiAssetsMargin)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if multiAssetsModeEnable {
+	if multiAssetsMargin {
 		fmt.Println("Multi-assets mode enabled")
 	} else {
 		fmt.Println("Multi-assets mode disabled")

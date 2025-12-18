@@ -50,12 +50,11 @@ var (
 		Run:   getPositionMode,
 	}
 
-	positionModeHedge  bool
-	positionModeOneway bool
+	dualSidePosition   bool
 	positionModeSetCmd = &cobra.Command{
 		Use:   "set",
 		Short: "Set position mode",
-		Long:  `Change the position mode. Use --hedge for Hedge mode or --oneway for One-way mode.`,
+		Long:  `Change the position mode. Use --dualSidePosition=true for Hedge mode or --dualSidePosition=false for One-way mode.`,
 		Run:   setPositionModeFunc,
 	}
 
@@ -119,9 +118,8 @@ func InitPositionsCmds() []*cobra.Command {
 	positionRiskCmd.Flags().StringP("symbol", "s", "", "Trading pair symbol")
 
 	// position mode flags
-	positionModeSetCmd.Flags().BoolVar(&positionModeHedge, "hedge", false, "Enable Hedge mode (dual side position)")
-	positionModeSetCmd.Flags().BoolVar(&positionModeOneway, "oneway", false, "Enable One-way mode (single side position)")
-	positionModeSetCmd.MarkFlagsMutuallyExclusive("hedge", "oneway")
+	positionModeSetCmd.Flags().BoolVar(&dualSidePosition, "dualSidePosition", false, "true: Hedge Mode; false: One-way Mode")
+	positionModeSetCmd.MarkFlagRequired("dualSidePosition")
 	positionModeCmd.AddCommand(positionModeGetCmd, positionModeSetCmd)
 
 	// position margin-history flags
@@ -144,8 +142,8 @@ func InitPositionsCmds() []*cobra.Command {
 	positionMarginCmd.MarkFlagRequired("amount")
 
 	// position set-side flags (deprecated)
-	positionSideStatusChangeCmd.Flags().BoolP("dual", "d", true, "Enable dual side position")
-	positionSideStatusChangeCmd.MarkFlagRequired("dual")
+	positionSideStatusChangeCmd.Flags().BoolP("dualSidePosition", "d", false, "true: Hedge Mode; false: One-way Mode")
+	positionSideStatusChangeCmd.MarkFlagRequired("dualSidePosition")
 
 	// Add all subcommands to position
 	positionCmd.AddCommand(
@@ -195,17 +193,17 @@ func getPositionMode(cmd *cobra.Command, args []string) {
 }
 
 func setPositionModeFunc(cmd *cobra.Command, args []string) {
-	if !positionModeHedge && !positionModeOneway {
-		log.Fatal("Please specify --hedge or --oneway")
+	if !cmd.Flags().Changed("dualSidePosition") {
+		log.Fatal("Please specify --dualSidePosition")
 	}
 
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
-	err := client.ChangePositionMode(positionModeHedge)
+	err := client.ChangePositionMode(dualSidePosition)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if positionModeHedge {
+	if dualSidePosition {
 		fmt.Println("Position mode changed to: Hedge Mode (Dual Side Position)")
 	} else {
 		fmt.Println("Position mode changed to: One-way Mode (Single Side Position)")
@@ -267,10 +265,10 @@ func positionSideStatus(cmd *cobra.Command, _ []string) {
 
 func positionSideStatusChange(cmd *cobra.Command, _ []string) {
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
-	dualSidePosition, _ := cmd.Flags().GetBool("dual")
-	err := client.ChangePositionSide(dualSidePosition)
+	dualSidePositionValue, _ := cmd.Flags().GetBool("dualSidePosition")
+	err := client.ChangePositionSide(dualSidePositionValue)
 	if err != nil {
 		log.Fatalf("futures position side status change error: %v", err)
 	}
-	fmt.Printf("dual side position changed to: %v\n", dualSidePosition)
+	fmt.Printf("dual side position changed to: %v\n", dualSidePositionValue)
 }

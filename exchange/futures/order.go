@@ -102,8 +102,8 @@ func (c *Client) CreateOrder(params map[string]string) (*futures.OrderResponse, 
 		price, _ := strconv.ParseFloat(params["price"], 64)
 		orderService.SetPrice(price)
 	}
-	if params["newClientOrderID"] != "" {
-		orderService.SetNewClientOrderId(params["newClientOrderID"])
+	if params["newClientOrderId"] != "" {
+		orderService.SetNewClientOrderId(params["newClientOrderId"])
 	}
 	if params["stopPrice"] != "" {
 		stopPrice, _ := strconv.ParseFloat(params["stopPrice"], 64)

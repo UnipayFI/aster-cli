@@ -56,9 +56,9 @@ func InitSymbolCmds() []*cobra.Command {
 
 	// symbol set-margin-type flags
 	symbolSetMarginTypeCmd.Flags().StringP("symbol", "s", "", "Trading pair symbol (required)")
-	symbolSetMarginTypeCmd.Flags().StringP("margin-type", "m", "", "Margin type: ISOLATED or CROSSED (required)")
+	symbolSetMarginTypeCmd.Flags().StringP("marginType", "m", "", "Margin type: ISOLATED or CROSSED (required)")
 	symbolSetMarginTypeCmd.MarkFlagRequired("symbol")
-	symbolSetMarginTypeCmd.MarkFlagRequired("margin-type")
+	symbolSetMarginTypeCmd.MarkFlagRequired("marginType")
 
 	// symbol leverage-bracket flags
 	symbolLeverageBracketCmd.Flags().StringVarP(&symbolLeverageBracketSymbol, "symbol", "s", "", "Trading pair symbol (optional)")
@@ -85,7 +85,7 @@ func setSymbolLeverage(cmd *cobra.Command, _ []string) {
 func setSymbolMarginType(cmd *cobra.Command, _ []string) {
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	symbol, _ := cmd.Flags().GetString("symbol")
-	marginType, _ := cmd.Flags().GetString("margin-type")
+	marginType, _ := cmd.Flags().GetString("marginType")
 	err := client.SetMarginType(symbol, asterfutures.MarginType(marginType))
 	if err != nil {
 		log.Fatal(err)
