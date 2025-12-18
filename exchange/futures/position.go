@@ -84,15 +84,22 @@ func (c *Client) GetPositionMarginHistory(symbol string, marginType int, startTi
 	result := PositionMarginHistoryList(history)
 	return &result, nil
 }
-
 func (c *Client) GetAdlQuantile(symbol string) (*AdlQuantileList, error) {
 	service := c.futuresClient().NewGetAdlQuantileService()
+	var quantiles []futures.AdlQuantileResponse
+	var err error
 	if symbol != "" {
-		service.SetSymbol(symbol)
-	}
-	quantiles, err := service.Do(context.Background())
-	if err != nil {
-		return nil, err
+		var resp *futures.AdlQuantileResponse
+		resp, err = service.Do(context.Background(), symbol)
+		if err != nil {
+			return nil, err
+		}
+		quantiles = []futures.AdlQuantileResponse{*resp}
+	} else {
+		quantiles, err = service.DoAll(context.Background())
+		if err != nil {
+			return nil, err
+		}
 	}
 	result := AdlQuantileList(quantiles)
 	return &result, nil

@@ -3,7 +3,7 @@ module github.com/UnipayFI/aster-cli
 go 1.25.1
 
 require (
-	github.com/UnipayFI/go-aster v0.0.0-20251217085755-b13288ed5ab4
+	github.com/UnipayFI/go-aster v0.0.0-20251218031639-306045b85a52
 	github.com/google/uuid v1.6.0
 	github.com/olekukonko/tablewriter v1.0.9
 	github.com/shopspring/decimal v1.4.0

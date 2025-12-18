@@ -146,8 +146,7 @@ func (c *Client) CancelOrder(symbol string, orderID int64, clientOrderID string)
 }
 
 func (c *Client) CancelAllOrders(symbol string) error {
-	_, err := c.futuresClient().NewCancelAllOrdersService(symbol).Do(context.Background())
-	return err
+	return c.futuresClient().NewCancelAllOrdersService(symbol).Do(context.Background())
 }
 
 func (c *Client) GetTrades(symbol string, startTime, endTime int64, fromId int64, limit int) (TradeList, error) {
