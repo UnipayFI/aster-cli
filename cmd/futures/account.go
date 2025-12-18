@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/UnipayFI/aster-cli/common"
 	"github.com/UnipayFI/aster-cli/config"
 	"github.com/UnipayFI/aster-cli/exchange"
 	"github.com/UnipayFI/aster-cli/exchange/futures"
@@ -81,8 +82,8 @@ func InitAccountCmds() []*cobra.Command {
 
 	accountIncomeCmd.Flags().StringP("symbol", "s", "", "Trading pair symbol")
 	accountIncomeCmd.Flags().StringP("incomeType", "t", "", "Income type")
-	accountIncomeCmd.Flags().Int64P("startTime", "a", 0, "Start time (timestamp in ms)")
-	accountIncomeCmd.Flags().Int64P("endTime", "e", 0, "End time (timestamp in ms)")
+	accountIncomeCmd.Flags().StringP("startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
+	accountIncomeCmd.Flags().StringP("endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	accountIncomeCmd.Flags().IntP("limit", "l", 100, "Number of results (default 100, max 1000)")
 
 	accountMultiAssetsModeSetCmd.Flags().BoolVar(&multiAssetsMargin, "multiAssetsMargin", false, "true: Multi-Assets Mode; false: Single-Asset Mode")
@@ -130,9 +131,18 @@ func showAccountCommissionRate(cmd *cobra.Command, _ []string) {
 func showAccountIncome(cmd *cobra.Command, _ []string) {
 	symbol, _ := cmd.Flags().GetString("symbol")
 	incomeType, _ := cmd.Flags().GetString("incomeType")
-	startTime, _ := cmd.Flags().GetInt64("startTime")
-	endTime, _ := cmd.Flags().GetInt64("endTime")
+	startTimeRaw, _ := cmd.Flags().GetString("startTime")
+	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	limit, _ := cmd.Flags().GetInt("limit")
+
+	startTime, _, err := common.ParseTimeFlagUnixMilli("--startTime", startTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
+	endTime, _, err := common.ParseTimeFlagUnixMilli("--endTime", endTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	income, err := client.GetIncome(symbol, incomeType, startTime, endTime, limit)

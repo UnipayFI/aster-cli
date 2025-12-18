@@ -99,9 +99,11 @@ Exec: `./aster-cli futures account income`
 **Supported parameters:**
 - `--symbol, -s`: Trading pair symbol
 - `--incomeType, -t`: Income type (e.g., REALIZED_PNL, COMMISSION, FUNDING_FEE)
-- `--startTime, -a`: Start time (timestamp in ms)
-- `--endTime, -e`: End time (timestamp in ms)
+- `--startTime, -a`: Start time (unix ms or "YYYY-MM-DD HH:MM:SS")
+- `--endTime, -e`: End time (unix ms or "YYYY-MM-DD HH:MM:SS")
 - `--limit, -l`: Number of results (default 100, max 1000)
+
+If the value contains spaces, wrap it in quotes, e.g. `--startTime "2025-12-18 04:16:21"`. Date time strings are parsed in local timezone.
 
 ```shell
 ┌───────┬─────────────┬─────────────────────────┬─────────────────────────┬─────────┬─────────────────────┬────────────────────┬──────────┐
@@ -191,8 +193,8 @@ Exec: `./aster-cli futures order list --symbol=ETHUSDT`
 - `--symbol, -s`: Trading pair symbol (required)
 - `--orderId, -i`: Start from this Order ID (returns orders >= orderId)
 - `--limit, -l`: Number of results (default 500, max 1000)
-- `--startTime, -a`: Start time (timestamp in ms)
-- `--endTime, -e`: End time (timestamp in ms)
+- `--startTime, -a`: Start time (unix ms or "YYYY-MM-DD HH:MM:SS")
+- `--endTime, -e`: End time (unix ms or "YYYY-MM-DD HH:MM:SS")
 
 ```shell
 ┌─────────────┬─────────┬──────┬────────┬───────────────┬────────┬───────┬───────────┬──────────┬──────────────┬───────────┬─────┬─────────────────────┬─────────────────────┐
@@ -218,8 +220,8 @@ Exec: `./aster-cli futures order trade --symbol=BTCUSDT`
 
 **Supported parameters:**
 - `--symbol, -s`: Trading pair symbol (required)
-- `--startTime, -a`: Start time (timestamp in ms)
-- `--endTime, -e`: End time (timestamp in ms)
+- `--startTime, -a`: Start time (unix ms or "YYYY-MM-DD HH:MM:SS")
+- `--endTime, -e`: End time (unix ms or "YYYY-MM-DD HH:MM:SS")
 - `--fromId, -f`: Trade ID to fetch from
 - `--limit, -l`: Number of results (default 500, max 1000)
 
@@ -240,8 +242,8 @@ Query user's force orders (liquidation orders).
 **Supported parameters:**
 - `--symbol, -s`: Trading pair symbol
 - `--autoCloseType, -t`: Auto close type: LIQUIDATION or ADL
-- `--startTime, -a`: Start time (timestamp in ms)
-- `--endTime, -e`: End time (timestamp in ms)
+- `--startTime, -a`: Start time (unix ms or "YYYY-MM-DD HH:MM:SS")
+- `--endTime, -e`: End time (unix ms or "YYYY-MM-DD HH:MM:SS")
 - `--limit, -l`: Number of results (default 50, max 100)
 
 ### Order - Cancel order by ID
@@ -323,8 +325,8 @@ Query position margin change history.
 **Supported parameters:**
 - `--symbol, -s`: Trading pair symbol (required)
 - `--type, -t`: Margin type: 1 for Add, 2 for Reduce
-- `--startTime, -a`: Start time (timestamp in ms)
-- `--endTime, -e`: End time (timestamp in ms)
+- `--startTime, -a`: Start time (unix ms or "YYYY-MM-DD HH:MM:SS")
+- `--endTime, -e`: End time (unix ms or "YYYY-MM-DD HH:MM:SS")
 - `--limit, -l`: Number of results (default 500)
 
 ### Position - ADL quantile
@@ -385,6 +387,6 @@ Query funding rate history.
 
 **Supported parameters:**
 - `--symbol, -s`: Trading pair symbol
-- `--startTime, -a`: Start time (timestamp in ms)
-- `--endTime, -e`: End time (timestamp in ms)
+- `--startTime, -a`: Start time (unix ms or "YYYY-MM-DD HH:MM:SS")
+- `--endTime, -e`: End time (unix ms or "YYYY-MM-DD HH:MM:SS")
 - `--limit, -l`: Number of results (default 100, max 1000)

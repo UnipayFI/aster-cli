@@ -100,8 +100,10 @@ Exec: `./aster-cli spot order list --symbol=ETHUSDT`
 - `--symbol, -s`: Trading pair symbol (required)
 - `--orderId, -i`: Start from this orderId (returns orders >= orderId)
 - `--limit, -l`: Number of results (default 500, max 1000)
-- `--startTime, -a`: Start time (unix milliseconds)
-- `--endTime, -e`: End time (unix milliseconds)
+- `--startTime, -a`: Start time (unix ms or "YYYY-MM-DD HH:MM:SS")
+- `--endTime, -e`: End time (unix ms or "YYYY-MM-DD HH:MM:SS")
+
+If the value contains spaces, wrap it in quotes, e.g. `--startTime "2025-12-18 04:16:21"`. Date time strings are parsed in local timezone.
 
 ```shell
 ┌───────────┬────────────────────────┬─────────┬──────┬────────┬──────────┬─────────┬───────────┬──────────┬──────────────┬───────────┬─────┬─────────────────────┬─────────────────────┐

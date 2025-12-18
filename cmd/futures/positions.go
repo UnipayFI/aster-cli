@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/UnipayFI/aster-cli/common"
 	"github.com/UnipayFI/aster-cli/config"
 	"github.com/UnipayFI/aster-cli/exchange"
 	"github.com/UnipayFI/aster-cli/exchange/futures"
@@ -61,8 +62,8 @@ var (
 	// position margin-history
 	positionMarginHistorySymbol    string
 	positionMarginHistoryType      int
-	positionMarginHistoryStartTime int64
-	positionMarginHistoryEndTime   int64
+	positionMarginHistoryStartTime string
+	positionMarginHistoryEndTime   string
 	positionMarginHistoryLimit     int
 	positionMarginHistoryCmd       = &cobra.Command{
 		Use:   "margin-history",
@@ -125,8 +126,8 @@ func InitPositionsCmds() []*cobra.Command {
 	// position margin-history flags
 	positionMarginHistoryCmd.Flags().StringVarP(&positionMarginHistorySymbol, "symbol", "s", "", "Trading pair symbol (required)")
 	positionMarginHistoryCmd.Flags().IntVarP(&positionMarginHistoryType, "type", "t", 0, "Margin type: 1 for Add, 2 for Reduce")
-	positionMarginHistoryCmd.Flags().Int64VarP(&positionMarginHistoryStartTime, "startTime", "a", 0, "Start time (timestamp in ms)")
-	positionMarginHistoryCmd.Flags().Int64VarP(&positionMarginHistoryEndTime, "endTime", "e", 0, "End time (timestamp in ms)")
+	positionMarginHistoryCmd.Flags().StringVarP(&positionMarginHistoryStartTime, "startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
+	positionMarginHistoryCmd.Flags().StringVarP(&positionMarginHistoryEndTime, "endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	positionMarginHistoryCmd.Flags().IntVarP(&positionMarginHistoryLimit, "limit", "l", 500, "Number of results (default 500)")
 	positionMarginHistoryCmd.MarkFlagRequired("symbol")
 
@@ -213,11 +214,15 @@ func setPositionModeFunc(cmd *cobra.Command, args []string) {
 func showPositionMarginHistory(cmd *cobra.Command, args []string) {
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	var startTime, endTime time.Time
-	if positionMarginHistoryStartTime != 0 {
-		startTime = time.UnixMilli(positionMarginHistoryStartTime)
+	if t, ok, err := common.ParseTimeFlag("--startTime", positionMarginHistoryStartTime); err != nil {
+		log.Fatal(err)
+	} else if ok {
+		startTime = t
 	}
-	if positionMarginHistoryEndTime != 0 {
-		endTime = time.UnixMilli(positionMarginHistoryEndTime)
+	if t, ok, err := common.ParseTimeFlag("--endTime", positionMarginHistoryEndTime); err != nil {
+		log.Fatal(err)
+	} else if ok {
+		endTime = t
 	}
 	history, err := client.GetPositionMarginHistory(positionMarginHistorySymbol, positionMarginHistoryType, startTime, endTime, positionMarginHistoryLimit)
 	if err != nil {

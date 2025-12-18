@@ -96,14 +96,14 @@ func InitOrderCmds() []*cobra.Command {
 	// order list flags
 	orderListCmd.Flags().Int64P("orderId", "i", 0, "Order ID")
 	orderListCmd.Flags().IntP("limit", "l", 500, "Number of results (default 500, max 1000)")
-	orderListCmd.Flags().Int64P("startTime", "a", 0, "Start time (timestamp in ms)")
-	orderListCmd.Flags().Int64P("endTime", "e", 0, "End time (timestamp in ms)")
+	orderListCmd.Flags().StringP("startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
+	orderListCmd.Flags().StringP("endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderListCmd.MarkFlagRequired("symbol")
 
 	// order force flags
 	orderForceCloseCmd.Flags().StringP("autoCloseType", "t", "", "Auto close type: LIQUIDATION or ADL")
-	orderForceCloseCmd.Flags().Int64P("startTime", "a", 0, "Start time (timestamp in ms)")
-	orderForceCloseCmd.Flags().Int64P("endTime", "e", 0, "End time (timestamp in ms)")
+	orderForceCloseCmd.Flags().StringP("startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
+	orderForceCloseCmd.Flags().StringP("endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderForceCloseCmd.Flags().IntP("limit", "l", 50, "Number of results (default 50, max 100)")
 
 	// order create flags
@@ -139,8 +139,8 @@ func InitOrderCmds() []*cobra.Command {
 	orderGetCmd.MarkFlagRequired("symbol")
 
 	// order trade flags
-	orderTradeCmd.Flags().Int64P("startTime", "a", 0, "Start time (timestamp in ms)")
-	orderTradeCmd.Flags().Int64P("endTime", "e", 0, "End time (timestamp in ms)")
+	orderTradeCmd.Flags().StringP("startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
+	orderTradeCmd.Flags().StringP("endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderTradeCmd.Flags().Int64P("fromId", "f", 0, "Trade ID to fetch from")
 	orderTradeCmd.Flags().IntP("limit", "l", 500, "Number of results (default 500, max 1000)")
 	orderTradeCmd.MarkFlagRequired("symbol")
@@ -161,9 +161,17 @@ func orderList(cmd *cobra.Command, _ []string) {
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	symbol, _ := cmd.Flags().GetString("symbol")
 	limit, _ := cmd.Flags().GetInt("limit")
-	startTime, _ := cmd.Flags().GetInt64("startTime")
-	endTime, _ := cmd.Flags().GetInt64("endTime")
+	startTimeRaw, _ := cmd.Flags().GetString("startTime")
+	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	orderID, _ := cmd.Flags().GetInt64("orderId")
+	startTime, _, err := common.ParseTimeFlagUnixMilli("--startTime", startTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
+	endTime, _, err := common.ParseTimeFlagUnixMilli("--endTime", endTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
 	orders, err := client.GetOrderList(symbol, limit, startTime, endTime, orderID)
 	if err != nil {
 		log.Fatal(err)
@@ -185,9 +193,17 @@ func forceCloseOrder(cmd *cobra.Command, _ []string) {
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	symbol, _ := cmd.Flags().GetString("symbol")
 	autoCloseType, _ := cmd.Flags().GetString("autoCloseType")
-	startTime, _ := cmd.Flags().GetInt64("startTime")
-	endTime, _ := cmd.Flags().GetInt64("endTime")
+	startTimeRaw, _ := cmd.Flags().GetString("startTime")
+	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	limit, _ := cmd.Flags().GetInt("limit")
+	startTime, _, err := common.ParseTimeFlagUnixMilli("--startTime", startTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
+	endTime, _, err := common.ParseTimeFlagUnixMilli("--endTime", endTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
 	orders, err := client.GetForceOrders(symbol, asterfutures.AutoCloseType(autoCloseType), startTime, endTime, limit)
 	if err != nil {
 		log.Fatal(err)
@@ -243,10 +259,18 @@ func getOrder(cmd *cobra.Command, _ []string) {
 func orderTrades(cmd *cobra.Command, _ []string) {
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	symbol, _ := cmd.Flags().GetString("symbol")
-	startTime, _ := cmd.Flags().GetInt64("startTime")
-	endTime, _ := cmd.Flags().GetInt64("endTime")
+	startTimeRaw, _ := cmd.Flags().GetString("startTime")
+	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	fromId, _ := cmd.Flags().GetInt64("fromId")
 	limit, _ := cmd.Flags().GetInt("limit")
+	startTime, _, err := common.ParseTimeFlagUnixMilli("--startTime", startTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
+	endTime, _, err := common.ParseTimeFlagUnixMilli("--endTime", endTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
 	trades, err := client.GetTrades(symbol, startTime, endTime, fromId, limit)
 	if err != nil {
 		log.Fatal(err)

@@ -3,6 +3,7 @@ package futures
 import (
 	"log"
 
+	"github.com/UnipayFI/aster-cli/common"
 	"github.com/UnipayFI/aster-cli/config"
 	"github.com/UnipayFI/aster-cli/exchange"
 	"github.com/UnipayFI/aster-cli/exchange/futures"
@@ -40,8 +41,8 @@ func InitFundingCmds() []*cobra.Command {
 	fundingInfoCmd.Flags().StringP("symbol", "s", "", "Trading pair symbol")
 
 	fundingRateCmd.Flags().StringP("symbol", "s", "", "Trading pair symbol")
-	fundingRateCmd.Flags().Int64P("startTime", "a", 0, "Start time (timestamp in ms)")
-	fundingRateCmd.Flags().Int64P("endTime", "e", 0, "End time (timestamp in ms)")
+	fundingRateCmd.Flags().StringP("startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
+	fundingRateCmd.Flags().StringP("endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	fundingRateCmd.Flags().IntP("limit", "l", 100, "Number of results (default 100, max 1000)")
 
 	fundingCmd.AddCommand(fundingInfoCmd, fundingRateCmd)
@@ -61,9 +62,17 @@ func showFundingInfo(cmd *cobra.Command, _ []string) {
 func showFundingRate(cmd *cobra.Command, _ []string) {
 	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	symbol, _ := cmd.Flags().GetString("symbol")
-	startTime, _ := cmd.Flags().GetInt64("startTime")
-	endTime, _ := cmd.Flags().GetInt64("endTime")
+	startTimeRaw, _ := cmd.Flags().GetString("startTime")
+	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	limit, _ := cmd.Flags().GetInt("limit")
+	startTime, _, err := common.ParseTimeFlagUnixMilli("--startTime", startTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
+	endTime, _, err := common.ParseTimeFlagUnixMilli("--endTime", endTimeRaw)
+	if err != nil {
+		log.Fatal(err)
+	}
 	rates, err := client.GetFundingRate(symbol, startTime, endTime, limit)
 	if err != nil {
 		log.Fatalf("futures funding rate error: %v", err)

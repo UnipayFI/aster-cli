@@ -60,8 +60,8 @@ func InitOrderCmds() []*cobra.Command {
 
 	orderListCmd.Flags().Int64P("orderId", "i", 0, "orderId")
 	orderListCmd.Flags().IntP("limit", "l", 500, "limit, max 1000")
-	orderListCmd.Flags().Int64P("startTime", "a", 0, "start time (unix milliseconds)")
-	orderListCmd.Flags().Int64P("endTime", "e", 0, "end time (unix milliseconds)")
+	orderListCmd.Flags().StringP("startTime", "a", "", "start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
+	orderListCmd.Flags().StringP("endTime", "e", "", "end time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderListCmd.MarkFlagRequired("symbol")
 
 	var side, orderType string
@@ -94,16 +94,20 @@ func orderList(cmd *cobra.Command, args []string) {
 	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
 	symbol, _ := cmd.Flags().GetString("symbol")
 	limit, _ := cmd.Flags().GetInt("limit")
-	startTimeMs, _ := cmd.Flags().GetInt64("startTime")
-	endTimeMs, _ := cmd.Flags().GetInt64("endTime")
+	startTimeRaw, _ := cmd.Flags().GetString("startTime")
+	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	orderID, _ := cmd.Flags().GetInt64("orderId")
 
 	var startTime, endTime time.Time
-	if startTimeMs != 0 {
-		startTime = time.UnixMilli(startTimeMs)
+	if t, ok, err := common.ParseTimeFlag("--startTime", startTimeRaw); err != nil {
+		log.Fatal(err)
+	} else if ok {
+		startTime = t
 	}
-	if endTimeMs != 0 {
-		endTime = time.UnixMilli(endTimeMs)
+	if t, ok, err := common.ParseTimeFlag("--endTime", endTimeRaw); err != nil {
+		log.Fatal(err)
+	} else if ok {
+		endTime = t
 	}
 
 	orders, err := client.GetOrderList(symbol, orderID, startTime, endTime, limit)
