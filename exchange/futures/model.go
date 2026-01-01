@@ -111,13 +111,13 @@ func (t *TradeList) Row() [][]any {
 type PositionRiskList []futures.PositionRiskResponse
 
 func (p *PositionRiskList) Header() []string {
-	return []string{"Symbol", "Position Side", "Position Amount", "Notional", "Entry Price", "Mark Price", "Unrealized Profit", "Liquidation Price", "Update Time"}
+	return []string{"Symbol", "Position Side", "Position Amount", "Entry Price", "Mark Price", "Unrealized Profit", "Liquidation Price", "Leverage", "Update Time"}
 }
 
 func (p *PositionRiskList) Row() [][]any {
 	rows := [][]any{}
 	for _, risk := range *p {
-		rows = append(rows, []any{risk.Symbol, risk.PositionSide, risk.PositionAmt, risk.NotionalValue, risk.EntryPrice, risk.MarkPrice, risk.UnRealizedProfit, risk.LiquidationPrice, risk.UpdateTime.Format("2006-01-02 15:04:05")})
+		rows = append(rows, []any{risk.Symbol, risk.PositionSide, risk.PositionAmt, risk.EntryPrice, risk.MarkPrice, risk.UnRealizedProfit, risk.LiquidationPrice, risk.Leverage, risk.UpdateTime.Format("2006-01-02 15:04:05")})
 	}
 	return rows
 }

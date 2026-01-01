@@ -47,14 +47,6 @@ func (c *Client) ModifyPositionMargin(symbol, positionSide string, amount float6
 	return err
 }
 
-func (c *Client) GetPositionSide() (bool, error) {
-	return c.futuresClient().NewGetPositionModeService().Do(context.Background())
-}
-
-func (c *Client) ChangePositionSide(dualSide bool) error {
-	return c.futuresClient().NewChangePositionModeService(dualSide).Do(context.Background())
-}
-
 func (c *Client) GetPositionMode() (bool, error) {
 	return c.futuresClient().NewGetPositionModeService().Do(context.Background())
 }

@@ -94,24 +94,6 @@ var (
 		},
 		Run: setPositionMargin,
 	}
-
-	// position side (get current mode - legacy)
-	positionSideStatusCmd = &cobra.Command{
-		Use:     "side",
-		Aliases: []string{"s"},
-		Short:   "Get position mode status",
-		Long:    `Get user's position mode (Hedge Mode or One-way Mode).`,
-		Run:     positionSideStatus,
-	}
-
-	// position set-side (legacy, kept for compatibility)
-	positionSideStatusChangeCmd = &cobra.Command{
-		Use:     "set-side",
-		Aliases: []string{"c"},
-		Short:   "Change position mode (deprecated, use 'mode set')",
-		Long:    `Change position mode. Deprecated: use 'position mode set' instead.`,
-		Run:     positionSideStatusChange,
-	}
 )
 
 func InitPositionsCmds() []*cobra.Command {
@@ -142,10 +124,6 @@ func InitPositionsCmds() []*cobra.Command {
 	positionMarginCmd.MarkFlagRequired("symbol")
 	positionMarginCmd.MarkFlagRequired("amount")
 
-	// position set-side flags (deprecated)
-	positionSideStatusChangeCmd.Flags().BoolP("dualSidePosition", "d", false, "true: Hedge Mode; false: One-way Mode")
-	positionSideStatusChangeCmd.MarkFlagRequired("dualSidePosition")
-
 	// Add all subcommands to position
 	positionCmd.AddCommand(
 		positionListCmd,
@@ -154,8 +132,6 @@ func InitPositionsCmds() []*cobra.Command {
 		positionMarginHistoryCmd,
 		positionAdlQuantileCmd,
 		positionMarginCmd,
-		positionSideStatusCmd,
-		positionSideStatusChangeCmd,
 	)
 
 	return []*cobra.Command{positionCmd}
@@ -257,23 +233,4 @@ func setPositionMargin(cmd *cobra.Command, _ []string) {
 		log.Fatalf("futures position margin set error: %v", err)
 	}
 	fmt.Printf("%s %s position %s %.6f\n", symbol, positionSide, typ, amount)
-}
-
-func positionSideStatus(cmd *cobra.Command, _ []string) {
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
-	position, err := client.GetPositionSide()
-	if err != nil {
-		log.Fatalf("futures position side status error: %v", err)
-	}
-	fmt.Printf("dual side position: %v\n", position)
-}
-
-func positionSideStatusChange(cmd *cobra.Command, _ []string) {
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
-	dualSidePositionValue, _ := cmd.Flags().GetBool("dualSidePosition")
-	err := client.ChangePositionSide(dualSidePositionValue)
-	if err != nil {
-		log.Fatalf("futures position side status change error: %v", err)
-	}
-	fmt.Printf("dual side position changed to: %v\n", dualSidePositionValue)
 }
