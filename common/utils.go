@@ -9,28 +9,36 @@ import (
 
 const dateTimeLayout = "2006-01-02 15:04:05"
 
-func ParseArgs(args []string) (params map[string]string) {
-	params = make(map[string]string, len(args))
-
-	var key string
-	for len(args) > 0 {
-		arg := strings.TrimLeft(args[0], "-")
-		kv := strings.Split(arg, "=")
-		if len(kv) == 1 {
-			if key == "" {
-				key = kv[0]
-			} else {
-				params[key] = kv[0]
-				key = ""
-			}
-		}
-		if len(kv) == 2 {
-			params[kv[0]] = kv[1]
-		}
-
-		args = args[1:]
+// FormatUnixTime renders an int64 timestamp as a UTC string. The unit (s / ms /
+// μs / ns) is sniffed by magnitude so that endpoints returning different units
+// for the same conceptual field (some Aster spot/futures account endpoints
+// return ns, others ms) all render correctly. Zero or negative values produce
+// an empty string.
+func FormatUnixTime(v int64) string {
+	if v <= 0 {
+		return ""
 	}
-	return
+	var t time.Time
+	switch {
+	case v >= 1e18:
+		t = time.Unix(0, v)
+	case v >= 1e15:
+		t = time.UnixMicro(v)
+	case v >= 1e12:
+		t = time.UnixMilli(v)
+	default:
+		t = time.Unix(v, 0)
+	}
+	return t.UTC().Format(dateTimeLayout)
+}
+
+// FormatTime renders a time.Time as a UTC string in the project layout. Used
+// in tandem with FormatUnixTime so all CLI output is timezone-consistent.
+func FormatTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format(dateTimeLayout)
 }
 
 func ParseTimeFlag(flagName string, value string) (time.Time, bool, error) {
@@ -55,14 +63,6 @@ func ParseTimeFlag(flagName string, value string) (time.Time, bool, error) {
 		return time.Time{}, false, invalidTimeFlagError(flagName)
 	}
 	return t, true, nil
-}
-
-func ParseTimeFlagUnixMilli(flagName string, value string) (int64, bool, error) {
-	t, ok, err := ParseTimeFlag(flagName, value)
-	if err != nil || !ok {
-		return 0, ok, err
-	}
-	return t.UnixMilli(), true, nil
 }
 
 func invalidTimeFlagError(flagName string) error {

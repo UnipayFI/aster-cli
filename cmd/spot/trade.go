@@ -3,9 +3,6 @@ package spot
 import (
 	"log"
 
-	"github.com/UnipayFI/aster-cli/config"
-	"github.com/UnipayFI/aster-cli/exchange"
-	"github.com/UnipayFI/aster-cli/exchange/spot"
 	"github.com/UnipayFI/aster-cli/printer"
 	"github.com/spf13/cobra"
 )
@@ -20,8 +17,10 @@ var (
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List user trades",
-		Long:    `Get trades for a specific account and symbol.`,
-		Run:     tradeList,
+		Long: `Get trades for a specific account and symbol.
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/account%26trades/#account-trade-history-user_data`,
+		Run: tradeList,
 	}
 )
 
@@ -37,7 +36,7 @@ func InitTradeCmds() []*cobra.Command {
 }
 
 func tradeList(cmd *cobra.Command, args []string) {
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	orderId, _ := cmd.Flags().GetInt64("orderId")
 	fromId, _ := cmd.Flags().GetInt64("fromId")
@@ -47,5 +46,5 @@ func tradeList(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(trades)
+	printer.Print(trades)
 }

@@ -1,5 +1,8 @@
 # Futures Module
 
+> The global `--json` flag is supported on every command and prints the raw
+> API response as indented JSON instead of a table.
+
 ## Quick Navigation
 - [Account](#account)
   - [Show account balances](#account---show-account-balances)
@@ -34,6 +37,8 @@
 ## Account
 
 ### Account - Show account balances
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#futures-account-balance-v3-user_data>
+
 Exec: `./aster-cli futures account balances`
 ```shell
 ┌──────────┬───────────┬──────────────────────┬──────────────┬───────────────────┬─────────────────────┐
@@ -74,6 +79,8 @@ Exec: `./aster-cli futures account balances`
 ```
 
 ### Account - Show account info
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#account-information-v3-user_data>
+
 Exec: `./aster-cli futures account info`
 ```shell
 ┌──────────┬───────────┬─────────────┬──────────────┬──────────────────────┬───────────────────┐
@@ -84,6 +91,8 @@ Exec: `./aster-cli futures account info`
 ```
 
 ### Account - Show commission rate
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#user-commission-rate-user_data>
+
 Exec: `./aster-cli futures account commission-rate --symbol=BTCUSDT`
 ```shell
 ┌─────────┬───────────────────────┬───────────────────────┐
@@ -94,6 +103,8 @@ Exec: `./aster-cli futures account commission-rate --symbol=BTCUSDT`
 ```
 
 ### Account - Query income history
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#get-income-historyuser_data>
+
 Exec: `./aster-cli futures account income`
 
 **Supported parameters:**
@@ -118,6 +129,9 @@ If the value contains spaces, wrap it in quotes, e.g. `--startTime "2025-12-18 0
 ```
 
 ### Account - Multi-assets mode
+Show docs: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#get-current-multi-assets-mode-user_data>
+Set docs: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#change-multi-assets-mode-trade>
+
 **Show current mode:**
 ```shell
 ./aster-cli futures account multi-assets-mode show
@@ -132,7 +146,10 @@ If the value contains spaces, wrap it in quotes, e.g. `--startTime "2025-12-18 0
 ## Order
 
 ### Order - Create Order
-Create a new futures order. Supports various order types.
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#new-order-trade>
+
+Create a new futures order. Supports various order types. The created order is
+printed back as a single-row table (or JSON with `--json`).
 
 **Market Order (Open Short):**
 ```shell
@@ -159,19 +176,21 @@ Create a new futures order. Supports various order types.
 - `--side, -S`: BUY or SELL
 - `--type, -t`: LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET
 - `--positionSide, -P`: LONG or SHORT (default BOTH for One-way Mode)
-- `--quantity, -q`: Order quantity
-- `--price, -p`: Order price (required for LIMIT orders)
+- `--quantity, -q`: Order quantity (decimal string)
+- `--price, -p`: Order price (decimal string, required for LIMIT orders)
 - `--timeInForce, -T`: GTC, IOC, FOK, GTX
 - `--reduceOnly`: Reduce only order
-- `--stopPrice`: Stop price for STOP/TAKE_PROFIT orders
+- `--stopPrice`: Stop price (decimal string) for STOP/TAKE_PROFIT orders
 - `--closePosition`: Close all position
-- `--activationPrice`: Activation price for TRAILING_STOP_MARKET
-- `--callbackRate`: Callback rate for TRAILING_STOP_MARKET (min 0.1, max 5)
+- `--activationPrice`: Activation price (decimal string) for TRAILING_STOP_MARKET
+- `--callbackRate`: Callback rate (decimal string) for TRAILING_STOP_MARKET (min 0.1, max 5)
 - `--workingType`: MARK_PRICE or CONTRACT_PRICE
 - `--priceProtect`: Price protection
 - `--newClientOrderId`: Custom order ID
 
 ### Order - List open orders
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#current-all-open-orders-user_data>
+
 Exec: `./aster-cli futures order open`
 
 Or for a specific symbol:
@@ -187,6 +206,8 @@ Or for a specific symbol:
 ```
 
 ### Order - List orders
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#all-orders-user_data>
+
 Exec: `./aster-cli futures order list --symbol=ETHUSDT`
 
 **Supported parameters:**
@@ -206,6 +227,8 @@ Exec: `./aster-cli futures order list --symbol=ETHUSDT`
 ```
 
 ### Order - Get Order
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#query-order-user_data>
+
 Query a single order by orderId or origClientOrderId.
 ```shell
 ./aster-cli futures order get --symbol=ETHUSDT --orderId=xxx
@@ -216,6 +239,8 @@ Or:
 ```
 
 ### Order - Query trades
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#account-trade-list-user_data>
+
 Exec: `./aster-cli futures order trade --symbol=BTCUSDT`
 
 **Supported parameters:**
@@ -234,6 +259,8 @@ Exec: `./aster-cli futures order trade --symbol=BTCUSDT`
 ```
 
 ### Order - Query force orders
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#users-force-orders-user_data>
+
 Query user's force orders (liquidation orders).
 ```shell
 ./aster-cli futures order force
@@ -247,21 +274,28 @@ Query user's force orders (liquidation orders).
 - `--limit, -l`: Number of results (default 50, max 100)
 
 ### Order - Cancel order by ID
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#cancel-order-trade>
+
 Exec: `./aster-cli futures order cancel --symbol=ETHUSDT --orderId=xxx`
 
 Or by client order ID:
 ```shell
 ./aster-cli futures order cancel --symbol=ETHUSDT --origClientOrderId=xxx
 ```
+The canceled order is printed back as a single-row table (or JSON with `--json`).
 
 ### Order - Cancel all orders by symbol
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#cancel-all-open-orders-trade>
+
 Exec: `./aster-cli futures order cancel --symbol=ETHUSDT`
 
-If neither `--orderId` nor `--origClientOrderId` is provided, all open orders for the symbol will be canceled.
+If neither `--orderId` nor `--origClientOrderId` is provided, all open orders for the symbol will be canceled. The response is the API's `{code, msg}` envelope.
 
 ## Position
 
 ### Position - List positions
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#account-information-v3-user_data>
+
 Exec: `./aster-cli futures position list`
 ```shell
 ┌─────────┬───────────────┬─────────────────┬─────────────┬───────────────────┬──────────┬─────────────────────┐
@@ -272,6 +306,8 @@ Exec: `./aster-cli futures position list`
 ```
 
 ### Position - Show position risk
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#position-information-v3-user_data>
+
 Exec: `./aster-cli futures position risk`
 
 Or for a specific symbol:
@@ -279,14 +315,17 @@ Or for a specific symbol:
 ./aster-cli futures position risk --symbol=BTCUSDT
 ```
 ```shell
-┌─────────┬───────────────┬─────────────────┬──────────┬─────────────┬────────────┬───────────────────┬───────────────────┬─────────────────────┐
-│ SYMBOL  │ POSITION SIDE │ POSITION AMOUNT │ NOTIONAL │ ENTRY PRICE │ MARK PRICE │ UNREALIZED PROFIT │ LIQUIDATION PRICE │     UPDATE TIME     │
-├─────────┼───────────────┼─────────────────┼──────────┼─────────────┼────────────┼───────────────────┼───────────────────┼─────────────────────┤
-│ ETHUSDT │ BOTH          │ 0.003           │ 0        │ 2928.5      │ 2823.95    │ -0.31365          │ 31.15841161       │ 2025-12-16 09:37:12 │
-└─────────┴───────────────┴─────────────────┴──────────┴─────────────┴────────────┴───────────────────┴───────────────────┴─────────────────────┘
+┌─────────┬───────────────┬─────────────────┬─────────────┬────────────┬───────────────────┬───────────────────┬──────────┬─────────────────────┐
+│ SYMBOL  │ POSITION SIDE │ POSITION AMOUNT │ ENTRY PRICE │ MARK PRICE │ UNREALIZED PROFIT │ LIQUIDATION PRICE │ LEVERAGE │     UPDATE TIME     │
+├─────────┼───────────────┼─────────────────┼─────────────┼────────────┼───────────────────┼───────────────────┼──────────┼─────────────────────┤
+│ ETHUSDT │ BOTH          │ 0.003           │ 2928.5      │ 2823.95    │ -0.31365          │ 31.15841161       │ 5        │ 2026-04-29 09:37:12 │
+└─────────┴───────────────┴─────────────────┴─────────────┴────────────┴───────────────────┴───────────────────┴──────────┴─────────────────────┘
 ```
 
 ### Position - Position mode
+Get docs: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#get-current-position-modeuser_data>
+Set docs: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#change-position-modetrade>
+
 **Get current position mode:**
 ```shell
 ./aster-cli futures position mode get
@@ -298,13 +337,9 @@ Or for a specific symbol:
 ./aster-cli futures position mode set --dualSidePosition=false  # One-way mode (single side position)
 ```
 
-**Legacy commands (still supported):**
-```shell
-./aster-cli futures position side               # Get position mode status
-./aster-cli futures position set-side --dualSidePosition=true  # Change position mode
-```
-
 ### Position - Set position margin
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#modify-isolated-position-margin-trade>
+
 Modify isolated position margin.
 ```shell
 ./aster-cli futures position set-margin --symbol=BTCUSDT --amount=1.0 --positionSide=SHORT --type=ADD
@@ -313,10 +348,12 @@ Modify isolated position margin.
 **Supported parameters:**
 - `--symbol, -s`: Trading pair symbol (required)
 - `--positionSide, -p`: Position side: BOTH, LONG, or SHORT (default BOTH)
-- `--amount, -a`: Margin amount (required)
+- `--amount, -a`: Margin amount (decimal string, required)
 - `--type, -t`: Margin type: ADD or REDUCE (default ADD)
 
 ### Position - Margin history
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#get-position-margin-change-history-trade>
+
 Query position margin change history.
 ```shell
 ./aster-cli futures position margin-history --symbol=BTCUSDT
@@ -330,6 +367,8 @@ Query position margin change history.
 - `--limit, -l`: Number of results (default 500)
 
 ### Position - ADL quantile
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#position-adl-quantile-estimation-user_data>
+
 Query ADL (Auto-Deleveraging) quantile estimation for positions.
 ```shell
 ./aster-cli futures position adl-quantile
@@ -343,12 +382,16 @@ Or for a specific symbol:
 ## Symbol
 
 ### Symbol - Set leverage
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#change-initial-leverage-trade>
+
 Change initial leverage for a symbol.
 ```shell
 ./aster-cli futures symbol set-leverage --symbol=BTCUSDT --leverage=10
 ```
 
 ### Symbol - Set margin type
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#change-margin-type-trade>
+
 Change symbol level margin type.
 ```shell
 ./aster-cli futures symbol set-margin-type --symbol=BTCUSDT --marginType=CROSSED
@@ -356,6 +399,8 @@ Change symbol level margin type.
 Supported types: ISOLATED, CROSSED
 
 ### Symbol - Leverage bracket
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#notional-and-leverage-brackets-user_data>
+
 Query notional and leverage bracket information.
 ```shell
 ./aster-cli futures symbol leverage-bracket
@@ -369,6 +414,8 @@ Or for a specific symbol:
 ## Funding
 
 ### Funding - Funding info
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/market-data/#get-funding-rate-config>
+
 Query funding info including funding interval and fee cap/floor.
 ```shell
 ./aster-cli futures funding info
@@ -380,6 +427,8 @@ Or for a specific symbol:
 ```
 
 ### Funding - Funding rate history
+Docs Link: <https://asterdex.github.io/aster-api-website/futures-v3/market-data/#get-funding-rate-history>
+
 Query funding rate history.
 ```shell
 ./aster-cli futures funding rate --symbol=BTCUSDT

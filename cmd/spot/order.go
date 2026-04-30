@@ -1,14 +1,10 @@
 package spot
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/UnipayFI/aster-cli/common"
-	"github.com/UnipayFI/aster-cli/config"
-	"github.com/UnipayFI/aster-cli/exchange"
 	"github.com/UnipayFI/aster-cli/exchange/spot"
 	"github.com/UnipayFI/aster-cli/printer"
 	"github.com/spf13/cobra"
@@ -24,19 +20,27 @@ var (
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List orders",
-		Run:     orderList,
+		Long: `Get all account orders.
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/account%26trades/#query-all-orders-user_data`,
+		Run: orderList,
 	}
 	orderOpenListCmd = &cobra.Command{
 		Use:   "open",
 		Short: "List open orders",
-		Run:   orderOpenList,
+		Long: `Get all open orders on a symbol.
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/account%26trades/#current-open-orders-user_data`,
+		Run: orderOpenList,
 	}
 	orderCreateCmd = &cobra.Command{
 		Use:     "create",
 		Aliases: []string{"c"},
 		Short:   "Create order",
 		Long: `Create a new order.
-* Supports parameters: symbol, side, type, quantity, quoteOrderQty, timeInForce, price, newClientOrderId, stopPrice`,
+* Supports parameters: symbol, side, type, quantity, quoteOrderQty, timeInForce, price, newClientOrderId, stopPrice
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/account%26trades/#place-order-trade`,
 		Run: createOrder,
 	}
 	orderCancelCmd = &cobra.Command{
@@ -44,14 +48,18 @@ var (
 		Short: "Cancel order",
 		Long: `Cancel order.
 If either orderId or origClientOrderId is provided, the specified order will be canceled.
-If only the symbol is passed, all open orders for that trading pair will be canceled.`,
+If only the symbol is passed, all open orders for that trading pair will be canceled.
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/account%26trades/#cancel-order-trade`,
 		Run: cancelOrder,
 	}
 	orderGetCmd = &cobra.Command{
 		Use:   "get",
 		Short: "Query a single order",
-		Long:  `Query a single order by orderId or origClientOrderId.`,
-		Run:   getOrder,
+		Long: `Query a single order by orderId or origClientOrderId.
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/account%26trades/#query-order-user_data`,
+		Run: getOrder,
 	}
 )
 
@@ -66,16 +74,13 @@ func InitOrderCmds() []*cobra.Command {
 
 	var side, orderType string
 	orderCreateCmd.Flags().StringVarP(&side, "side", "S", "", "BUY or SELL")
-	orderCreateCmd.Flags().StringVarP(&orderType, "type", "t", "", "LIMIT, MARKET, STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT, LIMIT_MAKER")
-	orderCreateCmd.Flags().Float64P("quantity", "q", 0, "order quantity")
-	orderCreateCmd.Flags().Float64("quoteOrderQty", 0, "quote order quantity (for MARKET orders)")
-	orderCreateCmd.Flags().Float64P("price", "p", 0, "order price (required for LIMIT orders)")
+	orderCreateCmd.Flags().StringVarP(&orderType, "type", "t", "", "LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET")
+	orderCreateCmd.Flags().StringP("quantity", "q", "", "order quantity (decimal string)")
+	orderCreateCmd.Flags().String("quoteOrderQty", "", "quote order quantity for MARKET orders (decimal string)")
+	orderCreateCmd.Flags().StringP("price", "p", "", "order price, required for LIMIT orders (decimal string)")
 	orderCreateCmd.Flags().StringP("timeInForce", "T", "", "GTC, IOC, FOK (default GTC for LIMIT orders)")
-	orderCreateCmd.Flags().Float64("stopPrice", 0, "stop price for STOP_LOSS/TAKE_PROFIT orders")
+	orderCreateCmd.Flags().String("stopPrice", "", "stop price for STOP/TAKE_PROFIT orders (decimal string)")
 	orderCreateCmd.Flags().String("newClientOrderId", "", "custom order id")
-	orderCreateCmd.FParseErrWhitelist = cobra.FParseErrWhitelist{
-		UnknownFlags: true,
-	}
 	orderCreateCmd.MarkFlagRequired("symbol")
 
 	orderCancelCmd.Flags().Int64P("orderId", "i", 0, "orderId")
@@ -91,7 +96,7 @@ func InitOrderCmds() []*cobra.Command {
 }
 
 func orderList(cmd *cobra.Command, args []string) {
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	limit, _ := cmd.Flags().GetInt("limit")
 	startTimeRaw, _ := cmd.Flags().GetString("startTime")
@@ -114,51 +119,70 @@ func orderList(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(orders)
+	printer.Print(orders)
 }
 
 func orderOpenList(cmd *cobra.Command, _ []string) {
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	orders, err := client.GetOpenOrders(symbol)
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(orders)
+	printer.Print(orders)
 }
 
 func createOrder(cmd *cobra.Command, _ []string) {
-	_, args, _ := cmd.Root().Find(os.Args[1:])
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
-	order, err := client.CreateOrder(common.ParseArgs(args))
+	client := newClient()
+	order, err := client.CreateOrder(buildOrderParams(cmd))
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		fmt.Println("order created, orderID:", order.OrderId)
 	}
+	orders := spot.OrderList{*order}
+	printer.Print(&orders)
 }
 
+// buildOrderParams reads the cobra-parsed flags and returns the long-name
+// keyed map that exchange/spot.Client.CreateOrder expects.
+func buildOrderParams(cmd *cobra.Command) map[string]string {
+	params := map[string]string{}
+	stringFlags := []string{
+		"symbol", "side", "type", "quantity", "quoteOrderQty",
+		"price", "timeInForce", "stopPrice", "newClientOrderId",
+	}
+	for _, name := range stringFlags {
+		if v, _ := cmd.Flags().GetString(name); v != "" {
+			params[name] = v
+		}
+	}
+	return params
+}
+
+
 func cancelOrder(cmd *cobra.Command, _ []string) {
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	orderID, _ := cmd.Flags().GetInt64("orderId")
 	clientOrderID, _ := cmd.Flags().GetString("origClientOrderId")
 
-	var err error
 	if orderID == 0 && clientOrderID == "" {
-		err = client.CancelAllOrders(symbol)
-	} else {
-		err = client.CancelOrder(symbol, orderID, clientOrderID)
+		resp, err := client.CancelAllOrders(symbol)
+		if err != nil {
+			log.Fatal(err)
+		}
+		printer.Print(resp)
+		return
 	}
+	order, err := client.CancelOrder(symbol, orderID, clientOrderID)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		fmt.Println("order canceled")
 	}
+	orders := spot.OrderList{*order}
+	printer.Print(&orders)
 }
 
 func getOrder(cmd *cobra.Command, _ []string) {
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	orderID, _ := cmd.Flags().GetInt64("orderId")
 	clientOrderID, _ := cmd.Flags().GetString("origClientOrderId")
@@ -168,5 +192,5 @@ func getOrder(cmd *cobra.Command, _ []string) {
 		log.Fatal(err)
 	}
 	orders := spot.OrderList{*order}
-	printer.PrintTable(&orders)
+	printer.Print(&orders)
 }

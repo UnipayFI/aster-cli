@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/UnipayFI/aster-cli/exchange"
-	"github.com/UnipayFI/go-aster/spot"
+	"github.com/UnipayFI/go-aster/v3/spot"
 )
 
 type Client struct {
@@ -16,7 +16,7 @@ func (c *Client) GetAccountInfo() (*Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Account{AccountResponse: *account}, nil
+	return &Account{AccountInfo: *account}, nil
 }
 
 func (c *Client) GetUserTrades(symbol string, orderId, fromId int64, limit int) (*TradeList, error) {
@@ -38,4 +38,4 @@ func (c *Client) GetUserTrades(symbol string, orderId, fromId int64, limit int) 
 	return &list, nil
 }
 
-type TradeList []spot.UserTradeResponse
+type TradeList []spot.UserTrade

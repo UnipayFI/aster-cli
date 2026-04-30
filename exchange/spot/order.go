@@ -2,11 +2,11 @@ package spot
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/UnipayFI/go-aster/spot"
+	"github.com/UnipayFI/go-aster/v3/spot"
+	"github.com/shopspring/decimal"
 )
 
 func (c *Client) GetOrderList(symbol string, orderID int64, start, end time.Time, limit int) (*OrderList, error) {
@@ -56,54 +56,63 @@ func (c *Client) GetOrder(symbol string, orderID int64, clientOrderID string) (*
 }
 
 func (c *Client) CreateOrder(params map[string]string) (*spot.OrderResponse, error) {
-	sideType := spot.OrderSide(strings.ToUpper(params["side"]))
+	side := spot.OrderSide(strings.ToUpper(params["side"]))
 	orderType := spot.OrderType(strings.ToUpper(params["type"]))
-	orderService := c.NewSpotClient().NewCreateOrderService(params["symbol"], sideType, orderType)
+	service := c.NewSpotClient().NewPlaceOrderService(params["symbol"], side, orderType)
 
-	if params["quantity"] != "" {
-		qty, _ := strconv.ParseFloat(params["quantity"], 64)
-		orderService.SetQuantity(qty)
+	if v := params["quantity"]; v != "" {
+		q, err := decimal.NewFromString(v)
+		if err != nil {
+			return nil, err
+		}
+		service.SetQuantity(q)
 	}
-	if params["quoteOrderQty"] != "" {
-		qty, _ := strconv.ParseFloat(params["quoteOrderQty"], 64)
-		orderService.SetQuoteOrderQty(qty)
+	if v := params["quoteOrderQty"]; v != "" {
+		q, err := decimal.NewFromString(v)
+		if err != nil {
+			return nil, err
+		}
+		service.SetQuoteOrderQty(q)
 	}
-	if params["timeInForce"] != "" {
-		orderService.SetTimeInForce(spot.TimeInForce(strings.ToUpper(params["timeInForce"])))
+	if v := params["timeInForce"]; v != "" {
+		service.SetTimeInForce(spot.TimeInForce(strings.ToUpper(v)))
 	} else if orderType == spot.OrderTypeLimit {
-		orderService.SetTimeInForce(spot.TimeInForceTypeGTC)
+		service.SetTimeInForce(spot.TimeInForceGTC)
 	}
-	if params["price"] != "" {
-		price, _ := strconv.ParseFloat(params["price"], 64)
-		orderService.SetPrice(price)
+	if v := params["price"]; v != "" {
+		p, err := decimal.NewFromString(v)
+		if err != nil {
+			return nil, err
+		}
+		service.SetPrice(p)
 	}
-	if params["newClientOrderId"] != "" {
-		orderService.SetNewClientOrderId(params["newClientOrderId"])
+	if v := params["newClientOrderId"]; v != "" {
+		service.SetNewClientOrderId(v)
 	}
-	if params["stopPrice"] != "" {
-		stopPrice, _ := strconv.ParseFloat(params["stopPrice"], 64)
-		orderService.SetStopPrice(stopPrice)
+	if v := params["stopPrice"]; v != "" {
+		p, err := decimal.NewFromString(v)
+		if err != nil {
+			return nil, err
+		}
+		service.SetStopPrice(p)
 	}
 
-	return orderService.Do(context.Background())
+	return service.Do(context.Background())
 }
 
-func (c *Client) CancelOrder(symbol string, orderID int64, clientOrderID string) error {
-	orderService := c.NewSpotClient().NewCancelOrderService(symbol)
+func (c *Client) CancelOrder(symbol string, orderID int64, clientOrderID string) (*spot.OrderResponse, error) {
+	service := c.NewSpotClient().NewCancelOrderService(symbol)
 	if orderID != 0 {
-		orderService.SetOrderId(orderID)
+		service.SetOrderId(orderID)
 	}
 	if clientOrderID != "" {
-		orderService.SetOrigClientOrderId(clientOrderID)
+		service.SetOrigClientOrderId(clientOrderID)
 	}
-	_, err := orderService.Do(context.Background())
-	return err
+	return service.Do(context.Background())
 }
 
-func (c *Client) CancelAllOrders(symbol string) error {
-	orderService := c.NewSpotClient().NewCancelAllOpenOrdersService(symbol)
-	_, err := orderService.Do(context.Background())
-	return err
+func (c *Client) CancelAllOrders(symbol string) (*spot.CancelAllOpenOrdersResponse, error) {
+	return c.NewSpotClient().NewCancelAllOpenOrdersService(symbol).Do(context.Background())
 }
 
 type OrderList []spot.OrderResponse

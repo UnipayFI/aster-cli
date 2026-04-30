@@ -3,11 +3,11 @@ package spot
 import (
 	"context"
 
-	"github.com/UnipayFI/go-aster/spot"
+	"github.com/UnipayFI/go-aster/v3/spot"
 )
 
 func (c *Client) GetCommissionRate(symbol string) (*CommissionRate, error) {
-	rate, err := c.NewSpotClient().NewCommissionRateService(symbol).Do(context.Background())
+	rate, err := c.NewSpotClient().NewGetCommissionRateService(symbol).Do(context.Background())
 	if err != nil {
 		return nil, err
 	}

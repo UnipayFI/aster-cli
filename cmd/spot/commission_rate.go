@@ -3,9 +3,6 @@ package spot
 import (
 	"log"
 
-	"github.com/UnipayFI/aster-cli/config"
-	"github.com/UnipayFI/aster-cli/exchange"
-	"github.com/UnipayFI/aster-cli/exchange/spot"
 	"github.com/UnipayFI/aster-cli/printer"
 	"github.com/spf13/cobra"
 )
@@ -16,8 +13,10 @@ var (
 	commissionRateCmd = &cobra.Command{
 		Use:   "commission-rate",
 		Short: "Get commission rate for a symbol",
-		Long:  `Query the commission rate for a specific trading pair.`,
-		Run:   showCommissionRate,
+		Long: `Query the commission rate for a specific trading pair.
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/market-data/#get-symbol-fees`,
+		Run: showCommissionRate,
 	}
 )
 
@@ -28,10 +27,10 @@ func InitCommissionRateCmds() []*cobra.Command {
 }
 
 func showCommissionRate(cmd *cobra.Command, args []string) {
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	rate, err := client.GetCommissionRate(commissionRateSymbol)
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(rate)
+	printer.Print(rate)
 }

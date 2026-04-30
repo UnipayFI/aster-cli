@@ -14,15 +14,19 @@ var (
 	accountCmd = &cobra.Command{
 		Use:   "account",
 		Short: "Show account info",
-		Long:  `Get current account information.`,
-		Run:   showAccount,
+		Long: `Get current account information.
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/account%26trades/#account-information-user_data`,
+		Run: showAccount,
 	}
 
 	balanceCmd = &cobra.Command{
 		Use:   "balance",
 		Short: "Show account balances",
-		Long:  `Get current account balances (non-zero only).`,
-		Run:   showBalance,
+		Long: `Get current account balances (non-zero only).
+
+Docs Link: https://asterdex.github.io/aster-api-website/spot-v3/account%26trades/#account-information-user_data`,
+		Run: showBalance,
 	}
 )
 
@@ -30,21 +34,25 @@ func InitAccountCmds() []*cobra.Command {
 	return []*cobra.Command{accountCmd, balanceCmd}
 }
 
+func newClient() spot.Client {
+	return spot.Client{Client: exchange.NewClient(config.Config.APIAddress, config.Config.APIPrivateKey, config.Config.ChainID)}
+}
+
 func showAccount(cmd *cobra.Command, args []string) {
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	account, err := client.GetAccountInfo()
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(account)
+	printer.Print(account)
 }
 
 func showBalance(cmd *cobra.Command, args []string) {
-	client := spot.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	account, err := client.GetAccountInfo()
 	if err != nil {
 		log.Fatal(err)
 	}
 	balances := spot.FilterNonZeroBalances(account.Balances)
-	printer.PrintTable(balances)
+	printer.Print(balances)
 }

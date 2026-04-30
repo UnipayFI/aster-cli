@@ -5,16 +5,16 @@ import (
 	"time"
 )
 
-func (c *Client) GetFundingRate(symbol string, startTime, endTime int64, limit int) (FundingRateList, error) {
-	service := c.futuresClient().NewFundingRateService()
+func (c *Client) GetFundingRate(symbol string, startTime, endTime time.Time, limit int) (FundingRateList, error) {
+	service := c.futuresClient().NewGetFundingRateService()
 	if symbol != "" {
 		service.SetSymbol(symbol)
 	}
-	if startTime != 0 {
-		service.SetStartTime(time.UnixMilli(startTime))
+	if !startTime.IsZero() {
+		service.SetStartTime(startTime)
 	}
-	if endTime != 0 {
-		service.SetEndTime(time.UnixMilli(endTime))
+	if !endTime.IsZero() {
+		service.SetEndTime(endTime)
 	}
 	if limit != 0 {
 		service.SetLimit(limit)
@@ -27,7 +27,7 @@ func (c *Client) GetFundingRate(symbol string, startTime, endTime int64, limit i
 }
 
 func (c *Client) GetFundingInfo(symbol string) (FundingInfoList, error) {
-	service := c.futuresClient().NewFundingInfoService()
+	service := c.futuresClient().NewGetFundingInfoService()
 	if symbol != "" {
 		service.SetSymbol(symbol)
 	}

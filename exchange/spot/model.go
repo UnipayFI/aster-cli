@@ -3,14 +3,15 @@ package spot
 import (
 	"fmt"
 
+	"github.com/UnipayFI/aster-cli/common"
 	"github.com/UnipayFI/aster-cli/printer"
-	"github.com/UnipayFI/go-aster/spot"
+	"github.com/UnipayFI/go-aster/v3/spot"
 )
 
 var _ printer.TableWriter = (*Account)(nil)
 
 type Account struct {
-	spot.AccountResponse
+	spot.AccountInfo
 }
 
 func (a *Account) Header() []string {
@@ -19,13 +20,13 @@ func (a *Account) Header() []string {
 
 func (a *Account) Row() [][]any {
 	return [][]any{
-		{a.FeeTier, a.CanTrade, a.CanWithdraw, a.CanDeposit, a.UpdateTime.Format("2006-01-02 15:04:05")},
+		{a.FeeTier, a.CanTrade, a.CanWithdraw, a.CanDeposit, common.FormatUnixTime(a.UpdateTime)},
 	}
 }
 
 var _ printer.TableWriter = (*AssetBalanceList)(nil)
 
-type AssetBalanceList []spot.AccountBalance
+type AssetBalanceList []spot.Balance
 
 func (a *AssetBalanceList) Header() []string {
 	return []string{"Asset", "Free", "Locked"}
@@ -55,7 +56,14 @@ func (o *OrderList) Row() [][]any {
 		if order.Type == spot.OrderTypeMarket && price.IsZero() && !order.ExecutedQty.IsZero() {
 			price = order.CumQuote.Div(order.ExecutedQty)
 		}
-		rows = append(rows, []any{order.OrderId, order.ClientOrderId, order.Symbol, order.Side, order.Type, order.Status, price, order.AvgPrice, order.OrigQty, order.ExecutedQty, order.CumQuote, order.TimeInForce, order.Time.Format("2006-01-02 15:04:05"), order.UpdateTime.Format("2006-01-02 15:04:05")})
+		// Aster's Place/Cancel responses populate transactTime, not the SDK's
+		// `time` field, so order.Time is zero on those code paths. Fall back
+		// to UpdateTime, which the same responses do populate.
+		timeStr := common.FormatTime(order.Time)
+		if timeStr == "" {
+			timeStr = common.FormatTime(order.UpdateTime)
+		}
+		rows = append(rows, []any{order.OrderId, order.ClientOrderId, order.Symbol, order.Side, order.Type, order.Status, price, order.AvgPrice, order.OrigQty, order.ExecutedQty, order.CumQuote, order.TimeInForce, timeStr, common.FormatTime(order.UpdateTime)})
 	}
 	return rows
 }
@@ -70,12 +78,12 @@ func (t *TradeList) Row() [][]any {
 	rows := [][]any{}
 	for _, trade := range *t {
 		commission := fmt.Sprintf("%s %s", trade.Commission, trade.CommissionAsset)
-		rows = append(rows, []any{trade.Id, trade.OrderId, trade.Symbol, trade.Side, trade.Price, trade.Qty, trade.QuoteQty, commission, trade.Time.Format("2006-01-02 15:04:05"), trade.Maker})
+		rows = append(rows, []any{trade.ID, trade.OrderID, trade.Symbol, trade.Side, trade.Price, trade.Qty, trade.QuoteQty, commission, common.FormatTime(trade.Time), trade.Maker})
 	}
 	return rows
 }
 
-func FilterNonZeroBalances(balances []spot.AccountBalance) *AssetBalanceList {
+func FilterNonZeroBalances(balances []spot.Balance) *AssetBalanceList {
 	list := AssetBalanceList{}
 	for _, b := range balances {
 		if !b.Free.IsZero() || !b.Locked.IsZero() {

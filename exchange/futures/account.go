@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/UnipayFI/aster-cli/exchange"
-	"github.com/UnipayFI/go-aster/futures"
+	"github.com/UnipayFI/go-aster/v3/futures"
 )
 
 type Client struct {
@@ -31,7 +31,7 @@ func (c *Client) GetBalances() (*BalanceList, error) {
 	return result, nil
 }
 
-func (c *Client) GetAccount() (*futures.AccountResponse, error) {
+func (c *Client) GetAccount() (*futures.AccountInfo, error) {
 	return c.futuresClient().NewGetAccountService().Do(context.Background())
 }
 
@@ -43,19 +43,19 @@ func (c *Client) GetCommissionRate(symbol string) (CommissionRateList, error) {
 	return CommissionRateList{*commissionRate}, nil
 }
 
-func (c *Client) GetIncome(symbol string, incomeType string, startTime int64, endTime int64, limit int) (IncomeHistoryList, error) {
-	service := c.futuresClient().NewGetIncomeService()
+func (c *Client) GetIncome(symbol string, incomeType string, startTime, endTime time.Time, limit int) (IncomeHistoryList, error) {
+	service := c.futuresClient().NewGetIncomeHistoryService()
 	if symbol != "" {
 		service.SetSymbol(symbol)
 	}
 	if incomeType != "" {
 		service.SetIncomeType(futures.IncomeType(incomeType))
 	}
-	if startTime != 0 {
-		service.SetStartTime(time.UnixMilli(startTime))
+	if !startTime.IsZero() {
+		service.SetStartTime(startTime)
 	}
-	if endTime != 0 {
-		service.SetEndTime(time.UnixMilli(endTime))
+	if !endTime.IsZero() {
+		service.SetEndTime(endTime)
 	}
 	if limit != 0 {
 		service.SetLimit(limit)
@@ -68,9 +68,13 @@ func (c *Client) GetIncome(symbol string, incomeType string, startTime int64, en
 }
 
 func (c *Client) GetMultiAssetsMode() (bool, error) {
-	return c.futuresClient().NewGetMultiAssetsModeService().Do(context.Background())
+	resp, err := c.futuresClient().NewGetMultiAssetsModeService().Do(context.Background())
+	if err != nil {
+		return false, err
+	}
+	return resp.MultiAssetsMargin, nil
 }
 
-func (c *Client) SetMultiAssetsMode(multiAssetsMode bool) error {
+func (c *Client) SetMultiAssetsMode(multiAssetsMode bool) (*futures.GenericCodeMsg, error) {
 	return c.futuresClient().NewChangeMultiAssetsModeService(multiAssetsMode).Do(context.Background())
 }

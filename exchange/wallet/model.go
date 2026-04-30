@@ -2,13 +2,13 @@ package wallet
 
 import (
 	"github.com/UnipayFI/aster-cli/printer"
-	"github.com/UnipayFI/go-aster/futures"
+	"github.com/UnipayFI/go-aster/v3/futures"
 )
 
 var _ printer.TableWriter = (*TransferResult)(nil)
 
 type TransferResult struct {
-	*futures.WalletTransferResponse
+	*futures.TransferResponse
 }
 
 func (t *TransferResult) Header() []string {
@@ -16,5 +16,5 @@ func (t *TransferResult) Header() []string {
 }
 
 func (t *TransferResult) Row() [][]any {
-	return [][]any{{t.TranId, t.Status}}
+	return [][]any{{t.TranID, t.Status}}
 }

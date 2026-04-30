@@ -8,9 +8,9 @@ import (
 )
 
 var RootCmd = &cobra.Command{
-	Use:     "aster-cli",
-	Short:   "AsterDEX API for CLI version",
-	PreRunE: checkAPIKey,
+	Use:               "aster-cli",
+	Short:             "AsterDEX API for CLI version",
+	PersistentPreRunE: checkCredentials,
 }
 
 func init() {
@@ -23,11 +23,12 @@ func Execute() {
 
 func initCommandConfig() {
 	RootCmd.CompletionOptions.DisableDefaultCmd = true
+	RootCmd.PersistentFlags().BoolVar(&config.Config.OutputJSON, "json", false, "Output JSON instead of a table")
 }
 
-func checkAPIKey(cmd *cobra.Command, args []string) error {
-	if config.Config.APIKey == "" || config.Config.APISecret == "" {
-		return errors.New("API_KEY and API_SECRET must be set")
+func checkCredentials(cmd *cobra.Command, args []string) error {
+	if config.Config.APIAddress == "" || config.Config.APIPrivateKey == "" {
+		return errors.New("API_ADDRESS and API_PRIVATE_KEY must be set")
 	}
 	return nil
 }

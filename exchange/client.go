@@ -1,24 +1,43 @@
 package exchange
 
 import (
-	"github.com/UnipayFI/go-aster/client"
-	"github.com/UnipayFI/go-aster/futures"
-	"github.com/UnipayFI/go-aster/spot"
+	"github.com/UnipayFI/aster-cli/config"
+	aster "github.com/UnipayFI/go-aster/v3"
+	"github.com/UnipayFI/go-aster/v3/client"
+	"github.com/UnipayFI/go-aster/v3/futures"
+	"github.com/UnipayFI/go-aster/v3/spot"
 )
 
 type Client struct {
-	ApiKey    string
-	ApiSecret string
+	Address    string
+	PrivateKey string
+	ChainID    int64
 }
 
-func NewClient(apiKey, apiSecret string) *Client {
-	return &Client{ApiKey: apiKey, ApiSecret: apiSecret}
+func NewClient(address, privateKey string, chainID int64) *Client {
+	return &Client{Address: address, PrivateKey: privateKey, ChainID: chainID}
+}
+
+func (c *Client) baseOptions() []client.Options {
+	opts := []client.Options{client.WithAuth(c.Address, c.PrivateKey)}
+	if c.ChainID != 0 {
+		opts = append(opts, client.WithChainID(c.ChainID))
+	}
+	return opts
 }
 
 func (c *Client) NewSpotClient() *spot.SpotClient {
-	return spot.NewSpotClient(client.WithAuth(c.ApiKey, c.ApiSecret))
+	opts := c.baseOptions()
+	if config.Config.SpotBaseURL != "" {
+		opts = append(opts, client.WithBaseURL(config.Config.SpotBaseURL))
+	}
+	return aster.NewSpotClient(opts...)
 }
 
 func (c *Client) NewFuturesClient() *futures.FuturesClient {
-	return futures.NewFuturesClient(client.WithAuth(c.ApiKey, c.ApiSecret))
+	opts := c.baseOptions()
+	if config.Config.FuturesBaseURL != "" {
+		opts = append(opts, client.WithBaseURL(config.Config.FuturesBaseURL))
+	}
+	return aster.NewFuturesClient(opts...)
 }

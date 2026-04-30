@@ -1,16 +1,12 @@
 package futures
 
 import (
-	"fmt"
 	"log"
-	"os"
+	"strconv"
 
-	"github.com/UnipayFI/aster-cli/common"
-	"github.com/UnipayFI/aster-cli/config"
-	"github.com/UnipayFI/aster-cli/exchange"
 	"github.com/UnipayFI/aster-cli/exchange/futures"
 	"github.com/UnipayFI/aster-cli/printer"
-	asterfutures "github.com/UnipayFI/go-aster/futures"
+	asterfutures "github.com/UnipayFI/go-aster/v3/futures"
 	"github.com/spf13/cobra"
 )
 
@@ -21,63 +17,68 @@ var (
 		Long:  `Manage orders: create, cancel, list, query, force orders, trades.`,
 	}
 
-	// order list
 	orderListCmd = &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List all account orders",
 		Long: `Get all account orders; active, canceled, or filled.
 - Orders not found: status is 'CANCELED' or 'EXPIRED' with no fills and created > 3 days ago
-- Orders older than 90 days are not returned`,
+- Orders older than 90 days are not returned
+
+Docs Link: https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#all-orders-user_data`,
 		Run: orderList,
 	}
 
-	// order open
 	orderOpenListCmd = &cobra.Command{
 		Use:   "open",
 		Short: "List open orders",
-		Long:  `Get all open orders on a symbol.`,
-		Run:   orderOpenList,
+		Long: `Get all open orders on a symbol.
+
+Docs Link: https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#current-all-open-orders-user_data`,
+		Run: orderOpenList,
 	}
 
-	// order force
 	orderForceCloseCmd = &cobra.Command{
 		Use:   "force",
 		Short: "Query force orders (liquidation)",
 		Long: `Query user's force orders (liquidation orders).
 - If "autoCloseType" is not sent, orders with both types will be returned
-- If "startTime" is not sent, data within 7 days before "endTime" can be queried`,
+- If "startTime" is not sent, data within 7 days before "endTime" can be queried
+
+Docs Link: https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#users-force-orders-user_data`,
 		Run: forceCloseOrder,
 	}
 
-	// order create
 	orderCreateCmd = &cobra.Command{
 		Use:     "create",
 		Aliases: []string{"c"},
 		Short:   "Create a new order",
-		Long:    `Create a new order.`,
-		Run:     createOrder,
+		Long: `Create a new order.
+
+Docs Link: https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#new-order-trade`,
+		Run: createOrder,
 	}
 
-	// order cancel
 	orderCancelCmd = &cobra.Command{
 		Use:   "cancel",
 		Short: "Cancel order(s)",
 		Long: `Cancel order(s).
 If either orderId or orgClientOrderId is provided, the specified order will be canceled.
-If only the symbol is passed, all open orders for that trading pair will be canceled.`,
+If only the symbol is passed, all open orders for that trading pair will be canceled.
+
+Docs Link: https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#cancel-order-trade`,
 		Run: cancelOrder,
 	}
 
-	// order get
 	orderGetCmd = &cobra.Command{
 		Use:   "get",
 		Short: "Query a single order",
-		Long:  `Query a single order by orderId or origClientOrderId.`,
-		Run:   getOrder,
+		Long: `Query a single order by orderId or origClientOrderId.
+
+Docs Link: https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#query-order-user_data`,
+		Run: getOrder,
 	}
 
-	// order trade
 	orderTradeCmd = &cobra.Command{
 		Use:     "trade",
 		Aliases: []string{"trades"},
@@ -85,7 +86,9 @@ If only the symbol is passed, all open orders for that trading pair will be canc
 		Long: `Get trades for a specific account and symbol.
 - If 'startTime' and 'endTime' are both not sent, then the last 7 days' data will be returned
 - The time between 'startTime' and 'endTime' cannot be longer than 7 days
-- Only support querying trades in the past 6 months`,
+- Only support querying trades in the past 6 months
+
+Docs Link: https://asterdex.github.io/aster-api-website/futures-v3/account%26trades/#account-trade-list-user_data`,
 		Run: orderTrades,
 	}
 )
@@ -93,52 +96,43 @@ If only the symbol is passed, all open orders for that trading pair will be canc
 func InitOrderCmds() []*cobra.Command {
 	orderCmd.PersistentFlags().StringP("symbol", "s", "", "Trading pair symbol")
 
-	// order list flags
 	orderListCmd.Flags().Int64P("orderId", "i", 0, "Order ID")
 	orderListCmd.Flags().IntP("limit", "l", 500, "Number of results (default 500, max 1000)")
 	orderListCmd.Flags().StringP("startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderListCmd.Flags().StringP("endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderListCmd.MarkFlagRequired("symbol")
 
-	// order force flags
 	orderForceCloseCmd.Flags().StringP("autoCloseType", "t", "", "Auto close type: LIQUIDATION or ADL")
 	orderForceCloseCmd.Flags().StringP("startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderForceCloseCmd.Flags().StringP("endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderForceCloseCmd.Flags().IntP("limit", "l", 50, "Number of results (default 50, max 100)")
 
-	// order create flags
 	var side, orderType string
 	orderCreateCmd.Flags().StringVarP(&side, "side", "S", "", "BUY or SELL")
 	orderCreateCmd.Flags().StringVarP(&orderType, "type", "t", "", "LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET")
 	orderCreateCmd.Flags().StringP("positionSide", "P", "", "LONG or SHORT (default BOTH for One-way Mode)")
-	orderCreateCmd.Flags().Float64P("quantity", "q", 0, "Order quantity")
-	orderCreateCmd.Flags().Float64P("price", "p", 0, "Order price (required for LIMIT orders)")
+	orderCreateCmd.Flags().StringP("quantity", "q", "", "Order quantity (decimal string)")
+	orderCreateCmd.Flags().StringP("price", "p", "", "Order price, required for LIMIT orders (decimal string)")
 	orderCreateCmd.Flags().StringP("timeInForce", "T", "", "GTC, IOC, FOK, GTX (default GTC for LIMIT orders)")
 	orderCreateCmd.Flags().Bool("reduceOnly", false, "Reduce only order")
-	orderCreateCmd.Flags().Float64("stopPrice", 0, "Stop price for STOP/TAKE_PROFIT orders")
+	orderCreateCmd.Flags().String("stopPrice", "", "Stop price for STOP/TAKE_PROFIT orders (decimal string)")
 	orderCreateCmd.Flags().Bool("closePosition", false, "Close all position")
-	orderCreateCmd.Flags().Float64("activationPrice", 0, "Activation price for TRAILING_STOP_MARKET")
-	orderCreateCmd.Flags().Float64("callbackRate", 0, "Callback rate for TRAILING_STOP_MARKET (min 0.1, max 5)")
+	orderCreateCmd.Flags().String("activationPrice", "", "Activation price for TRAILING_STOP_MARKET (decimal string)")
+	orderCreateCmd.Flags().String("callbackRate", "", "Callback rate for TRAILING_STOP_MARKET, min 0.1 max 5 (decimal string)")
 	orderCreateCmd.Flags().String("workingType", "", "MARK_PRICE or CONTRACT_PRICE")
 	orderCreateCmd.Flags().Bool("priceProtect", false, "Price protection")
 	orderCreateCmd.Flags().String("newClientOrderId", "", "Custom order ID")
 	orderCreateCmd.Flags().String("newOrderRespType", "", "ACK, RESULT (default ACK)")
-	orderCreateCmd.FParseErrWhitelist = cobra.FParseErrWhitelist{
-		UnknownFlags: true,
-	}
 	orderCreateCmd.MarkFlagRequired("symbol")
 
-	// order cancel flags
 	orderCancelCmd.Flags().Int64P("orderId", "i", 0, "Order ID")
 	orderCancelCmd.Flags().StringP("origClientOrderId", "c", "", "Client order ID")
 	orderCancelCmd.MarkFlagRequired("symbol")
 
-	// order get flags
 	orderGetCmd.Flags().Int64P("orderId", "i", 0, "Order ID")
 	orderGetCmd.Flags().StringP("origClientOrderId", "c", "", "Client order ID")
 	orderGetCmd.MarkFlagRequired("symbol")
 
-	// order trade flags
 	orderTradeCmd.Flags().StringP("startTime", "a", "", "Start time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderTradeCmd.Flags().StringP("endTime", "e", "", "End time (unix ms or \"YYYY-MM-DD HH:MM:SS\")")
 	orderTradeCmd.Flags().Int64P("fromId", "f", 0, "Trade ID to fetch from")
@@ -158,17 +152,17 @@ func InitOrderCmds() []*cobra.Command {
 }
 
 func orderList(cmd *cobra.Command, _ []string) {
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	limit, _ := cmd.Flags().GetInt("limit")
 	startTimeRaw, _ := cmd.Flags().GetString("startTime")
 	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	orderID, _ := cmd.Flags().GetInt64("orderId")
-	startTime, _, err := common.ParseTimeFlagUnixMilli("--startTime", startTimeRaw)
+	startTime, err := parseTimeFlag("--startTime", startTimeRaw)
 	if err != nil {
 		log.Fatal(err)
 	}
-	endTime, _, err := common.ParseTimeFlagUnixMilli("--endTime", endTimeRaw)
+	endTime, err := parseTimeFlag("--endTime", endTimeRaw)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -176,31 +170,31 @@ func orderList(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(&orders)
+	printer.Print(&orders)
 }
 
 func orderOpenList(cmd *cobra.Command, _ []string) {
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	orders, err := client.GetOpenOrders(symbol)
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(&orders)
+	printer.Print(&orders)
 }
 
 func forceCloseOrder(cmd *cobra.Command, _ []string) {
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	autoCloseType, _ := cmd.Flags().GetString("autoCloseType")
 	startTimeRaw, _ := cmd.Flags().GetString("startTime")
 	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	limit, _ := cmd.Flags().GetInt("limit")
-	startTime, _, err := common.ParseTimeFlagUnixMilli("--startTime", startTimeRaw)
+	startTime, err := parseTimeFlag("--startTime", startTimeRaw)
 	if err != nil {
 		log.Fatal(err)
 	}
-	endTime, _, err := common.ParseTimeFlagUnixMilli("--endTime", endTimeRaw)
+	endTime, err := parseTimeFlag("--endTime", endTimeRaw)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -208,41 +202,69 @@ func forceCloseOrder(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(&orders)
+	printer.Print(&orders)
 }
 
 func createOrder(cmd *cobra.Command, _ []string) {
-	_, args, _ := cmd.Root().Find(os.Args[1:])
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
-	order, err := client.CreateOrder(common.ParseArgs(args))
+	client := newClient()
+	order, err := client.CreateOrder(buildOrderParams(cmd))
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		fmt.Println("order created, orderID:", order.OrderId)
 	}
+	orders := futures.OrderList{*order}
+	printer.Print(&orders)
+}
+
+// buildOrderParams reads the cobra-parsed flags and returns the long-name
+// keyed map that exchange/futures.Client.CreateOrder expects. Bool flags are
+// encoded as "true"/"false" because the underlying SDK wrapper checks the
+// string value.
+func buildOrderParams(cmd *cobra.Command) map[string]string {
+	params := map[string]string{}
+	stringFlags := []string{
+		"symbol", "side", "type", "positionSide", "quantity",
+		"price", "timeInForce", "stopPrice", "activationPrice",
+		"callbackRate", "workingType", "newClientOrderId", "newOrderRespType",
+	}
+	for _, name := range stringFlags {
+		if v, _ := cmd.Flags().GetString(name); v != "" {
+			params[name] = v
+		}
+	}
+	boolFlags := []string{"reduceOnly", "closePosition", "priceProtect"}
+	for _, name := range boolFlags {
+		if cmd.Flags().Changed(name) {
+			b, _ := cmd.Flags().GetBool(name)
+			params[name] = strconv.FormatBool(b)
+		}
+	}
+	return params
 }
 
 func cancelOrder(cmd *cobra.Command, _ []string) {
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	orderID, _ := cmd.Flags().GetInt64("orderId")
 	clientOrderID, _ := cmd.Flags().GetString("origClientOrderId")
 
-	var err error
 	if orderID == 0 && clientOrderID == "" {
-		err = client.CancelAllOrders(symbol)
-	} else {
-		err = client.CancelOrder(symbol, orderID, clientOrderID)
+		resp, err := client.CancelAllOrders(symbol)
+		if err != nil {
+			log.Fatal(err)
+		}
+		printer.Print(resp)
+		return
 	}
+	order, err := client.CancelOrder(symbol, orderID, clientOrderID)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		fmt.Println("order canceled")
 	}
+	orders := futures.OrderList{*order}
+	printer.Print(&orders)
 }
 
 func getOrder(cmd *cobra.Command, _ []string) {
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	orderID, _ := cmd.Flags().GetInt64("orderId")
 	clientOrderID, _ := cmd.Flags().GetString("origClientOrderId")
@@ -251,23 +273,22 @@ func getOrder(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Wrap single order in OrderList for table printing
 	orders := futures.OrderList{*order}
-	printer.PrintTable(&orders)
+	printer.Print(&orders)
 }
 
 func orderTrades(cmd *cobra.Command, _ []string) {
-	client := futures.Client{Client: exchange.NewClient(config.Config.APIKey, config.Config.APISecret)}
+	client := newClient()
 	symbol, _ := cmd.Flags().GetString("symbol")
 	startTimeRaw, _ := cmd.Flags().GetString("startTime")
 	endTimeRaw, _ := cmd.Flags().GetString("endTime")
 	fromId, _ := cmd.Flags().GetInt64("fromId")
 	limit, _ := cmd.Flags().GetInt("limit")
-	startTime, _, err := common.ParseTimeFlagUnixMilli("--startTime", startTimeRaw)
+	startTime, err := parseTimeFlag("--startTime", startTimeRaw)
 	if err != nil {
 		log.Fatal(err)
 	}
-	endTime, _, err := common.ParseTimeFlagUnixMilli("--endTime", endTimeRaw)
+	endTime, err := parseTimeFlag("--endTime", endTimeRaw)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -275,5 +296,5 @@ func orderTrades(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	printer.PrintTable(&trades)
+	printer.Print(&trades)
 }
