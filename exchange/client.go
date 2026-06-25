@@ -4,6 +4,7 @@ import (
 	"github.com/UnipayFI/aster-cli/config"
 	aster "github.com/UnipayFI/go-aster/v3"
 	"github.com/UnipayFI/go-aster/v3/client"
+	asterCommon "github.com/UnipayFI/go-aster/v3/common"
 	"github.com/UnipayFI/go-aster/v3/futures"
 	"github.com/UnipayFI/go-aster/v3/spot"
 )
@@ -20,8 +21,10 @@ func NewClient(address, privateKey string, chainID int64) *Client {
 
 func (c *Client) baseOptions() []client.Options {
 	opts := []client.Options{client.WithAuth(c.Address, c.PrivateKey)}
-	if c.ChainID != 0 {
-		opts = append(opts, client.WithChainID(c.ChainID))
+	if c.ChainID == asterCommon.EIP712_CHAIN_ID_TESTNET {
+		opts = append(opts, client.WithNetwork(asterCommon.Testnet))
+	} else {
+		opts = append(opts, client.WithNetwork(asterCommon.Mainnet))
 	}
 	return opts
 }

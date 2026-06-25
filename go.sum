@@ -1,5 +1,5 @@
-github.com/UnipayFI/go-aster/v3 v3.0.0-20260430081843-71373b48f23c h1:0DlgkTy/mnm6ZpqOzFw5NEjZtc797fiaJ5Nl56dDUbw=
-github.com/UnipayFI/go-aster/v3 v3.0.0-20260430081843-71373b48f23c/go.mod h1:BKhSKI5rjtJCW93bruBrns+s0hHWmYV/Mg9zTjzZjqc=
+github.com/UnipayFI/go-aster/v3 v3.0.2 h1:piRLa1+sD/sUbJWhqcroJYahidbbM2HNSp3kjnKZMp0=
+github.com/UnipayFI/go-aster/v3 v3.0.2/go.mod h1:pCRk56mKAg2MEVk9zZ89hkbVf3vbcntXGm6KnMRF8Ww=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/decred/dcrd/crypto/blake256 v1.0.0 h1:/8DMNYp9SGi5f0w7uCm6d6M4OU2rGFK09Y2A4Xv7EE0=
 github.com/decred/dcrd/crypto/blake256 v1.0.0/go.mod h1:sQl2p6Y26YV+ZOcSTP6thNdn47hh8kt6rqSlvmrXFAc=
