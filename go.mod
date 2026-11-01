@@ -1,9 +1,9 @@
 module github.com/UnipayFI/aster-cli
 
-go 1.26
+go 1.27.3
 
 require (
-	github.com/UnipayFI/go-aster/v3 v3.20260617.0
+	github.com/UnipayFI/go-aster/v3 v3.20261027.0
 	github.com/google/uuid v1.6.0
 	github.com/olekukonko/tablewriter v1.0.9
 	github.com/shopspring/decimal v1.4.0
@@ -15,7 +15,6 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/ethereum/go-ethereum v1.17.4 // indirect
 	github.com/fatih/color v1.18.0 // indirect
-	github.com/go-json-experiment/json v0.0.0-20260504200034-64a0a05799db // indirect
 	github.com/go-resty/resty/v2 v2.17.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/holiman/uint256 v1.3.2 // indirect

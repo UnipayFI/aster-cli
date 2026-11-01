@@ -41,6 +41,14 @@ func FormatTime(t time.Time) string {
 	return t.UTC().Format(dateTimeLayout)
 }
 
+// FormatTimePtr is FormatTime for optional SDK fields; nil renders as "".
+func FormatTimePtr(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return FormatTime(*t)
+}
+
 func ParseTimeFlag(flagName string, value string) (time.Time, bool, error) {
 	v := strings.TrimSpace(value)
 	if v == "" || v == "0" {

@@ -57,9 +57,9 @@ func (o *OrderList) Row() [][]any {
 			price = order.CumQuote.Div(order.ExecutedQty)
 		}
 		// Aster's Place/Cancel responses populate transactTime, not the SDK's
-		// `time` field, so order.Time is zero on those code paths. Fall back
+		// `time` field, so order.Time is nil on those code paths. Fall back
 		// to UpdateTime, which the same responses do populate.
-		timeStr := common.FormatTime(order.Time)
+		timeStr := common.FormatTimePtr(order.Time)
 		if timeStr == "" {
 			timeStr = common.FormatTime(order.UpdateTime)
 		}

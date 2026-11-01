@@ -47,7 +47,7 @@ func (f *ForceOrderList) Header() []string {
 func (f *ForceOrderList) Row() [][]any {
 	rows := [][]any{}
 	for _, order := range *f {
-		rows = append(rows, []any{order.OrderId, order.Symbol, order.Side, order.PositionSide, order.Status, order.Price, order.OrigQty, order.ExecutedQty, common.FormatTime(order.Time), common.FormatTime(order.UpdateTime)})
+		rows = append(rows, []any{order.OrderId, order.Symbol, order.Side, order.PositionSide, order.Status, order.Price, order.OrigQty, order.ExecutedQty, common.FormatTimePtr(order.Time), common.FormatTime(order.UpdateTime)})
 	}
 	return rows
 }
@@ -62,9 +62,9 @@ func (o *OrderList) Row() [][]any {
 	rows := [][]any{}
 	for _, order := range *o {
 		// See spot OrderList note: Place/Cancel responses populate transactTime
-		// (which the SDK doesn't capture), leaving order.Time zero. Fall back
+		// (which the SDK doesn't capture), leaving order.Time nil. Fall back
 		// to UpdateTime so the table shows a meaningful timestamp.
-		timeStr := common.FormatTime(order.Time)
+		timeStr := common.FormatTimePtr(order.Time)
 		if timeStr == "" {
 			timeStr = common.FormatTime(order.UpdateTime)
 		}
